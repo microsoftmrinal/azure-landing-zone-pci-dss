@@ -6,8 +6,8 @@ Production-ready Azure Landing Zone implementing a **PCI DSS v4.0 compliant Card
 
 | Diagram | View |
 |---------|------|
-| **Architecture Diagram** (5 views: topology, traffic flow, management groups, security layers, DR) | [Open Diagram](https://htmlpreview.github.io/?https://github.com/microsoftmrinal/azure-landing-zone-pci-dss/blob/main/docs/architecture-diagram.html) |
-| **Landing Zone Explained Simply** (14 animated slides, kid-friendly) | [Open Explanation](https://htmlpreview.github.io/?https://github.com/microsoftmrinal/azure-landing-zone-pci-dss/blob/main/docs/landing-zone-explained-for-kids.html) |
+| **Architecture Diagram** (5 views: topology, traffic flow, management groups, security layers, DR) | [Open Diagram](https://microsoftmrinal.github.io/azure-landing-zone-pci-dss/architecture-diagram.html) |
+| **Landing Zone Explained Simply** (14 animated slides, kid-friendly) | [Open Explanation](https://microsoftmrinal.github.io/azure-landing-zone-pci-dss/landing-zone-explained-for-kids.html) |
 
 ## Architecture Overview
 
