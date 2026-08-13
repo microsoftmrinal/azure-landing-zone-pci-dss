@@ -67,9 +67,17 @@ resource "azurerm_linux_web_app" "cde" {
     ftps_state          = "Disabled"
     http2_enabled       = true
     always_on           = true
+    health_check_path   = "/health"
 
     ip_restriction_default_action = "Deny"
   }
+
+  auth_settings {
+    enabled = true
+  }
+
+  client_certificate_enabled = true
+  client_certificate_mode    = "OptionalInteractiveUser"
 
   identity {
     type = "SystemAssigned"
@@ -83,6 +91,9 @@ resource "azurerm_linux_web_app" "cde" {
   }
 
   logs {
+    detailed_error_messages = true
+    failed_request_tracing  = true
+
     http_logs {
       file_system {
         retention_in_days = 30

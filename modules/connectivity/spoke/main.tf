@@ -151,6 +151,56 @@ resource "azurerm_subnet_network_security_group_association" "compute" {
   network_security_group_id = azurerm_network_security_group.compute.id
 }
 
+# NSG for app integration subnet
+resource "azurerm_network_security_group" "app_integration" {
+  name                = "nsg-${var.workload}-app-${var.environment}-${local.region_code}"
+  location            = azurerm_resource_group.spoke.location
+  resource_group_name = azurerm_resource_group.spoke.name
+  tags                = var.common_tags
+
+  security_rule {
+    name                       = "DenyAllInbound"
+    priority                   = 4096
+    direction                  = "Inbound"
+    access                     = "Deny"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
+resource "azurerm_subnet_network_security_group_association" "app_integration" {
+  subnet_id                 = azurerm_subnet.app_integration.id
+  network_security_group_id = azurerm_network_security_group.app_integration.id
+}
+
+# NSG for private endpoints subnet
+resource "azurerm_network_security_group" "private_endpoints" {
+  name                = "nsg-${var.workload}-pe-${var.environment}-${local.region_code}"
+  location            = azurerm_resource_group.spoke.location
+  resource_group_name = azurerm_resource_group.spoke.name
+  tags                = var.common_tags
+
+  security_rule {
+    name                       = "DenyAllInbound"
+    priority                   = 4096
+    direction                  = "Inbound"
+    access                     = "Deny"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
+resource "azurerm_subnet_network_security_group_association" "private_endpoints" {
+  subnet_id                 = azurerm_subnet.private_endpoints.id
+  network_security_group_id = azurerm_network_security_group.private_endpoints.id
+}
+
 output "vnet_id" {
   value = azurerm_virtual_network.spoke.id
 }

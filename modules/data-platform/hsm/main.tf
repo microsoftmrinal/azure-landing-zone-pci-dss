@@ -82,10 +82,11 @@ resource "azurerm_key_vault" "cde" {
 
 # TDE key for SQL Server CMK
 resource "azurerm_key_vault_key" "tde" {
-  name         = "key-tde-sql-cde"
-  key_vault_id = azurerm_key_vault.cde.id
-  key_type     = "RSA-HSM"
-  key_size     = 3072
+  name            = "key-tde-sql-cde"
+  key_vault_id    = azurerm_key_vault.cde.id
+  key_type        = "RSA-HSM"
+  key_size        = 3072
+  expiration_date = timeadd(timestamp(), "8760h")
 
   key_opts = [
     "unwrapKey",

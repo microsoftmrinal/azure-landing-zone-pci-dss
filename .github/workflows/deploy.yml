@@ -83,8 +83,9 @@ jobs:
         with:
           directory: modules/
           framework: terraform
-          output_format: sarif
+          output_format: cli
           soft_fail: false
+          config_file: .checkov.yml
 
   plan:
     name: 'Plan'

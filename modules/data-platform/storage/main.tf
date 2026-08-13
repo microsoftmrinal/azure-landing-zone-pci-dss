@@ -60,6 +60,16 @@ resource "azurerm_storage_account" "audit" {
     }
   }
 
+  queue_properties {
+    logging {
+      delete                = true
+      read                  = true
+      write                 = true
+      version               = "1.0"
+      retention_policy_days = 365
+    }
+  }
+
   network_rules {
     default_action = "Deny"
     bypass         = ["AzureServices"]

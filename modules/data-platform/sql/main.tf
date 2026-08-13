@@ -148,9 +148,15 @@ resource "azurerm_mssql_failover_group" "cde" {
 
 # Auditing
 resource "azurerm_mssql_server_extended_auditing_policy" "primary" {
-  server_id                  = azurerm_mssql_server.primary.id
-  log_monitoring_enabled     = true
-  retention_in_days          = 365
+  server_id              = azurerm_mssql_server.primary.id
+  log_monitoring_enabled = true
+  retention_in_days      = 365
+}
+
+resource "azurerm_mssql_server_extended_auditing_policy" "secondary" {
+  server_id              = azurerm_mssql_server.secondary.id
+  log_monitoring_enabled = true
+  retention_in_days      = 365
 }
 
 # Diagnostic settings
