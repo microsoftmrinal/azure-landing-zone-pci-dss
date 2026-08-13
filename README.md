@@ -4,41 +4,184 @@ Production-ready Azure Landing Zone implementing a **PCI DSS v4.0 compliant Card
 
 ## Architecture Overview
 
+```mermaid
+graph TB
+    Internet((Internet))
+
+    subgraph Edge["Edge Layer"]
+        FD[Azure Front Door Premium<br/>+ WAF OWASP 2.1]
+        DDoS[DDoS Network Protection]
+    end
+
+    subgraph NEU["North Europe — Primary"]
+        subgraph HubNEU["Hub VNet • 10.1.0.0/16"]
+            FW1[Azure Firewall Premium<br/>IDPS + TLS Inspection]
+            VPN1[VPN Gateway<br/>BGP / IPSec]
+            Bastion1[Azure Bastion]
+            DNS1[Private DNS Zones]
+        end
+        subgraph SpokeNEU["CDE Spoke • 10.10.0.0/16"]
+            App1[App Service P2v3<br/>VNet-integrated]
+            VM1[VMs - Trusted Launch<br/>JIT Access]
+            SQL1[(SQL Business Critical<br/>TDE + CMK)]
+            KV1[Key Vault]
+            HSM1[Managed HSM<br/>FIPS 140-2 L3]
+            ST1[Storage WORM<br/>Immutable Audit]
+        end
+    end
+
+    subgraph WEU["West Europe — DR"]
+        subgraph HubWEU["Hub VNet • 10.2.0.0/16"]
+            FW2[Azure Firewall Premium<br/>IDPS + TLS Inspection]
+            VPN2[VPN Gateway<br/>BGP / IPSec]
+        end
+        subgraph SpokeWEU["CDE Spoke • 10.20.0.0/16"]
+            App2[App Service P2v3<br/>Standby]
+            SQL2[(SQL Failover<br/>Read-Only)]
+            ST2[Storage GRS<br/>Geo-Replicated]
+        end
+    end
+
+    subgraph Security["Security & Monitoring"]
+        Sentinel[Microsoft Sentinel<br/>+ Log Analytics 365d]
+        Defender[Defender for Cloud<br/>All Plans]
+        Policy[Azure Policy<br/>PCI DSS v4 Initiative]
+    end
+
+    Internet -->|HTTPS| FD
+    FD -->|Private Link| App1
+    FD -.->|Failover| App2
+    App1 -->|UDR → FW| FW1
+    FW1 -->|Private Endpoint| SQL1
+    FW1 -->|Private Endpoint| KV1
+    FW1 -->|Private Endpoint| ST1
+    SQL1 <-->|Auto-Failover<br/>RPO < 5s| SQL2
+    ST1 <-.->|GRS Replication| ST2
+    HubNEU <-->|Hub Peering| HubWEU
+    VPN1 -->|IPSec| OnPrem((On-Premises))
+    Sentinel -.->|Monitors| FW1
+    Sentinel -.->|Monitors| FW2
+    Defender -.->|Assesses| SpokeNEU
+    Policy -.->|Enforces| SpokeNEU
+    Policy -.->|Enforces| SpokeWEU
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Azure Front Door Premium + WAF                │
-│                     (Single public entry point)                  │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │ Private Link
-┌──────────────────────────────┴──────────────────────────────────┐
-│  Hub VNet (North Europe)          │  Hub VNet (West Europe)      │
-│  ┌─────────────────────┐         │  ┌─────────────────────┐    │
-│  │ Azure Firewall      │         │  │ Azure Firewall      │    │
-│  │ Premium (IDPS+TLS)  │         │  │ Premium (IDPS+TLS)  │    │
-│  └─────────────────────┘         │  └─────────────────────┘    │
-│  ┌─────────────────────┐         │  ┌─────────────────────┐    │
-│  │ VPN Gateway (BGP)   │         │  │ VPN Gateway (BGP)   │    │
-│  └─────────────────────┘         │  └─────────────────────┘    │
-│  ┌─────────────────────┐         │                              │
-│  │ Azure Bastion       │         │                              │
-│  └─────────────────────┘         │                              │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │ VNet Peering (non-transitive)
-┌──────────────────────────────┴──────────────────────────────────┐
-│  CDE Spoke (North Europe)         │  CDE Spoke (West Europe)    │
-│  ┌──────────┐ ┌──────────┐       │  ┌──────────┐ ┌─────────┐  │
-│  │App Service│ │ VMs (TL) │       │  │App Service│ │ VMs(TL) │  │
-│  │(VNet Int.)│ │  JIT     │       │  │(VNet Int.)│ │  JIT    │  │
-│  └──────────┘ └──────────┘       │  └──────────┘ └─────────┘  │
-│  ┌──────────┐ ┌──────────┐       │  ┌──────────┐              │
-│  │ SQL MI   │ │ Storage  │       │  │ SQL MI   │              │
-│  │(Pvt EP)  │ │(Pvt EP)  │       │  │(Pvt EP)  │              │
-│  └──────────┘ └──────────┘       │  └──────────┘              │
-│  ┌──────────┐ ┌──────────┐       │                             │
-│  │Key Vault │ │Payment   │       │                             │
-│  │(Pvt EP)  │ │HSM       │       │                             │
-│  └──────────┘ └──────────┘       │                             │
-└─────────────────────────────────────────────────────────────────┘
+
+## Management Group Hierarchy
+
+```mermaid
+graph TD
+    TRG[Tenant Root Group]
+    TRG --> Root["P24-Root<br/><i>Security baseline policies</i>"]
+
+    Root --> Platform[Platform]
+    Root --> LZ[Landing Zones]
+    Root --> Sandbox[Sandbox]
+    Root --> Decom[Decommissioned]
+
+    Platform --> Conn[Connectivity<br/><i>Hub, Firewall, VPN</i>]
+    Platform --> Mgmt[Management<br/><i>Sentinel, Defender</i>]
+    Platform --> Ident[Identity<br/><i>PIM, CA Policies</i>]
+
+    LZ --> CDE["CDE-Prod 🔴<br/><i>PCI DSS v4 assigned</i>"]
+    LZ --> Corp[Corp<br/><i>Non-CDE workloads</i>]
+
+    style CDE fill:#fee2e2,stroke:#ef4444,stroke-width:3px
+    style Root fill:#dbeafe,stroke:#3b82f6,stroke-width:2px
+    style Platform fill:#e0e7ff,stroke:#6366f1
+    style LZ fill:#dcfce7,stroke:#22c55e
+```
+
+## Traffic Flow
+
+```mermaid
+sequenceDiagram
+    participant User as Internet User
+    participant FD as Front Door + WAF
+    participant FW as Firewall Premium
+    participant App as App Service
+    participant SQL as SQL (Private EP)
+
+    User->>FD: HTTPS Request
+    Note over FD: WAF OWASP inspection<br/>Bot detection<br/>Rate limiting
+    FD->>App: Private Link (no public IP)
+    Note over FW: IDPS inspection<br/>TLS decryption
+    App->>FW: Data request (UDR 0.0.0.0/0)
+    FW->>SQL: Private Endpoint
+    SQL-->>FW: Encrypted response (TDE)
+    FW-->>App: Inspected traffic
+    App-->>FD: Response
+    FD-->>User: HTTPS Response
+```
+
+## Security Layers (Defence-in-Depth)
+
+```mermaid
+graph LR
+    A[Attacker] ==>|Blocked| L1
+
+    subgraph L1["Layer 1: Edge"]
+        FD2[Front Door WAF]
+        DDOS2[DDoS Protection]
+    end
+
+    subgraph L2["Layer 2: Network"]
+        FW3[Firewall IDPS]
+        NSG[NSGs]
+        PE[Private Endpoints]
+    end
+
+    subgraph L3["Layer 3: Identity"]
+        MFA[Phishing-Resistant MFA]
+        PIM[PIM Just-in-Time]
+        CA[Conditional Access]
+    end
+
+    subgraph L4["Layer 4: Application"]
+        MI[Managed Identity]
+        VNET[VNet Integration]
+    end
+
+    subgraph L5["Layer 5: Data"]
+        TDE[TDE + CMK]
+        HSM2[Managed HSM]
+        WORM[Immutable Storage]
+    end
+
+    L1 --> L2 --> L3 --> L4 --> L5
+
+    style L1 fill:#fef2f2,stroke:#ef4444,stroke-width:2px
+    style L2 fill:#fff7ed,stroke:#f59e0b,stroke-width:2px
+    style L3 fill:#faf5ff,stroke:#a78bfa,stroke-width:2px
+    style L4 fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
+    style L5 fill:#eff6ff,stroke:#3b82f6,stroke-width:2px
+```
+
+## Disaster Recovery
+
+```mermaid
+graph LR
+    subgraph Primary["North Europe (Active)"]
+        P_FD[Front Door ●]
+        P_FW[Firewall ●]
+        P_App[App Service ●]
+        P_SQL[(SQL Read-Write ●)]
+        P_HSM[HSM ●]
+    end
+
+    subgraph DR["West Europe (Standby)"]
+        D_FD[Front Door ○]
+        D_FW[Firewall ●]
+        D_App[App Service ○]
+        D_SQL[(SQL Read-Only ○)]
+        D_KV[Key Vault ○]
+    end
+
+    P_SQL <-->|"Auto-Failover<br/>RTO < 60min | RPO < 5sec"| D_SQL
+    P_FD <-.->|"Active-Active<br/>RTO: 0"| D_FD
+    P_App <-.->|"Active-Passive<br/>RTO < 5min"| D_App
+
+    style Primary fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
+    style DR fill:#fff7ed,stroke:#f59e0b,stroke-width:2px
 ```
 
 ## Design Principles
