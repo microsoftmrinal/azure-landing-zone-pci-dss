@@ -64,6 +64,10 @@ resource "azurerm_storage_account" "audit" {
     default_action = "Deny"
     bypass         = ["AzureServices"]
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Immutability policy for audit logs

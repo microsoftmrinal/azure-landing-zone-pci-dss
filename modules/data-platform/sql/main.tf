@@ -121,6 +121,10 @@ resource "azurerm_mssql_database" "cde" {
     yearly_retention  = "P7Y"
     week_of_year      = 1
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Failover group

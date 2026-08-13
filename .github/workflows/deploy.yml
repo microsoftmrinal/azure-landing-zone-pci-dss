@@ -53,6 +53,20 @@ jobs:
         working-directory: environments/prod
         run: terraform validate
 
+  test:
+    name: 'Test'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Test
+        working-directory: environments/prod
+        run: terraform test -no-color
+
   security-scan:
     name: 'Security Scan'
     runs-on: ubuntu-latest
@@ -74,7 +88,7 @@ jobs:
 
   plan:
     name: 'Plan'
-    needs: [validate, security-scan]
+    needs: [validate, test, security-scan]
     runs-on: ubuntu-latest
     environment: production
     steps:

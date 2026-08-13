@@ -196,6 +196,7 @@ module "front_door" {
   org_prefix                 = var.org_prefix
   environment                = var.environment
   origin_hostname            = module.app_service.default_hostname
+  origin_app_service_id      = module.app_service.app_service_id
   log_analytics_workspace_id = module.sentinel.workspace_id
   custom_domain_name         = var.custom_domain_name
   common_tags                = var.common_tags

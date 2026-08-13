@@ -106,13 +106,13 @@ variable "vpn_shared_key" {
   description = "Pre-shared key for VPN Gateway connection (use Key Vault reference in CI/CD)"
   type        = string
   sensitive   = true
-  default     = ""
+  default     = null
 }
 
 variable "on_prem_gateway_ip" {
   description = "On-premises VPN gateway public IP"
   type        = string
-  default     = ""
+  default     = null
 }
 
 variable "on_prem_address_spaces" {
@@ -131,5 +131,17 @@ variable "hsm_admin_object_ids" {
 variable "custom_domain_name" {
   description = "Custom domain for Front Door (e.g., app.payment24.com)"
   type        = string
-  default     = ""
+  default     = null
+}
+
+# --- Compute ---
+variable "admin_ssh_public_key" {
+  description = "SSH public key for VM admin user (retrieve from Key Vault in pipeline)"
+  type        = string
+  sensitive   = true
+}
+
+variable "disk_encryption_set_id" {
+  description = "Disk Encryption Set ID for VM OS disk encryption (linked to HSM key)"
+  type        = string
 }

@@ -51,6 +51,10 @@ resource "azurerm_key_vault_managed_hardware_security_module" "this" {
     default_action = "Deny"
     bypass         = "AzureServices"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Key Vault for application secrets (non-key material)
@@ -69,6 +73,10 @@ resource "azurerm_key_vault" "cde" {
   network_acls {
     default_action = "Deny"
     bypass         = "AzureServices"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 

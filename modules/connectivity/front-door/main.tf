@@ -15,6 +15,11 @@ variable "origin_hostname" {
   type        = string
 }
 
+variable "origin_app_service_id" {
+  description = "Resource ID of the App Service used as private origin"
+  type        = string
+}
+
 variable "log_analytics_workspace_id" {
   type = string
 }
@@ -74,7 +79,7 @@ resource "azurerm_cdn_frontdoor_origin" "app" {
 
   private_link {
     location               = "northeurope"
-    private_link_target_id = "/subscriptions/placeholder" # resolved at deploy time via data source
+    private_link_target_id = var.origin_app_service_id
     request_message        = "Front Door Private Link"
     target_type            = "sites"
   }

@@ -19,6 +19,17 @@ variable "subnet_id" {
   type        = string
 }
 
+variable "admin_ssh_public_key" {
+  description = "SSH public key for VM admin (retrieve from Key Vault in CI/CD)"
+  type        = string
+  sensitive   = true
+}
+
+variable "disk_encryption_set_id" {
+  description = "Disk Encryption Set ID linked to HSM key"
+  type        = string
+}
+
 variable "log_analytics_workspace_id" {
   type = string
 }
@@ -47,7 +58,7 @@ resource "azurerm_linux_virtual_machine" "cde" {
 
   admin_ssh_key {
     username   = "azureadmin"
-    public_key = "" # Injected via CI/CD or Key Vault
+    public_key = var.admin_ssh_public_key
   }
 
   network_interface_ids = [azurerm_network_interface.cde.id]
@@ -55,7 +66,7 @@ resource "azurerm_linux_virtual_machine" "cde" {
   os_disk {
     caching                = "ReadOnly"
     storage_account_type   = "Premium_ZRS"
-    disk_encryption_set_id = "" # Link to DES using HSM key
+    disk_encryption_set_id = var.disk_encryption_set_id
   }
 
   source_image_reference {
