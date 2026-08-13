@@ -51,7 +51,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
 
 /* ========== VIEW 1: Full Architecture ========== */
 .arch-canvas {
-  position: relative; width: 100%; min-height: 750px;
+  position: relative; width: 100%; min-height: 1050px;
   background: var(--card); border-radius: 16px; border: 1px solid var(--border);
   overflow: hidden;
 }
@@ -332,117 +332,117 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
   <svg class="connections" id="connSvg"></svg>
 
   <!-- Internet -->
-  <div class="node" id="n-internet" style="top:15px;left:50%;transform:translateX(-50%);">
+  <div class="node" id="n-internet" style="top:20px;left:50%;transform:translateX(-50%);">
     <span class="icon">🌐</span><span class="label">Internet</span>
   </div>
 
   <!-- Front Door -->
-  <div class="node" id="n-frontdoor" style="top:85px;left:50%;transform:translateX(-50%);border-color:var(--green);">
+  <div class="node" id="n-frontdoor" style="top:100px;left:50%;transform:translateX(-50%);border-color:var(--green);">
     <span class="icon">🚪</span><span class="label">Front Door Premium + WAF</span>
   </div>
 
   <!-- DDoS -->
-  <div class="node" id="n-ddos" style="top:85px;left:78%;">
+  <div class="node" id="n-ddos" style="top:100px;left:80%;">
     <span class="icon">🛡️</span><span class="label">DDoS Protection</span>
   </div>
 
   <!-- ===== Primary Region ===== -->
-  <div class="zone" style="top:160px;left:20px;width:48%;height:560px;border-color:var(--green);">
+  <div class="zone" style="top:200px;left:20px;width:47%;height:800px;border-color:var(--green);">
     <span class="zone-label" style="background:rgba(34,197,94,0.15);color:var(--green);">🟢 North Europe (Primary)</span>
 
     <!-- Hub Zone -->
-    <div class="zone" style="top:35px;left:10px;width:80%;height:210px;border-color:var(--accent);">
+    <div class="zone" style="top:40px;left:8px;width:92%;height:250px;border-color:var(--accent);">
       <span class="zone-label" style="background:rgba(79,140,255,0.15);color:var(--accent);">Hub VNet • 10.1.0.0/16</span>
     </div>
   </div>
 
-  <div class="node" id="n-fw1" style="top:230px;left:8%;border-color:var(--orange);">
+  <div class="node" id="n-fw1" style="top:280px;left:5%;border-color:var(--orange);">
     <span class="icon">🔥</span><span class="label">Firewall Premium</span>
   </div>
-  <div class="node" id="n-vpn1" style="top:230px;left:24%;">
+  <div class="node" id="n-vpn1" style="top:280px;left:26%;">
     <span class="icon">🔒</span><span class="label">VPN Gateway</span>
   </div>
-  <div class="node" id="n-bastion1" style="top:310px;left:8%;">
+  <div class="node" id="n-bastion1" style="top:380px;left:5%;">
     <span class="icon">🖥️</span><span class="label">Bastion</span>
   </div>
-  <div class="node" id="n-dns1" style="top:310px;left:24%;">
+  <div class="node" id="n-dns1" style="top:380px;left:26%;">
     <span class="icon">📡</span><span class="label">Private DNS</span>
   </div>
 
   <!-- CDE Spoke Primary -->
-  <div class="zone" style="top:410px;left:30px;width:45%;height:295px;border-color:var(--red);">
+  <div class="zone" style="top:500px;left:30px;width:45%;height:480px;border-color:var(--red);">
     <span class="zone-label" style="background:rgba(239,68,68,0.15);color:var(--red);">🔴 CDE Spoke • 10.10.0.0/16</span>
   </div>
 
-  <div class="node" id="n-app1" style="top:455px;left:5%;border-color:var(--green);">
+  <div class="node" id="n-app1" style="top:550px;left:4%;border-color:var(--green);">
     <span class="icon">📱</span><span class="label">App Service (P2v3)</span>
   </div>
-  <div class="node" id="n-vm1" style="top:455px;left:25%;">
+  <div class="node" id="n-vm1" style="top:550px;left:26%;">
     <span class="icon">💻</span><span class="label">VM (Trusted Launch)</span>
   </div>
-  <div class="node" id="n-sql1" style="top:540px;left:5%;border-color:var(--purple);">
+  <div class="node" id="n-sql1" style="top:660px;left:4%;border-color:var(--purple);">
     <span class="icon">🗄️</span><span class="label">SQL Business Critical</span>
   </div>
-  <div class="node" id="n-kv1" style="top:540px;left:25%;">
+  <div class="node" id="n-kv1" style="top:660px;left:26%;">
     <span class="icon">🔑</span><span class="label">Key Vault</span>
   </div>
-  <div class="node" id="n-hsm1" style="top:620px;left:5%;border-color:var(--purple);">
+  <div class="node" id="n-hsm1" style="top:770px;left:4%;border-color:var(--purple);">
     <span class="icon">🔐</span><span class="label">Managed HSM</span>
   </div>
-  <div class="node" id="n-storage1" style="top:620px;left:25%;">
+  <div class="node" id="n-storage1" style="top:770px;left:26%;">
     <span class="icon">💾</span><span class="label">Storage (WORM)</span>
   </div>
 
   <!-- ===== DR Region ===== -->
-  <div class="zone" style="top:160px;right:20px;width:48%;height:560px;border-color:var(--orange);">
+  <div class="zone" style="top:200px;right:20px;width:47%;height:800px;border-color:var(--orange);">
     <span class="zone-label" style="background:rgba(245,158,11,0.15);color:var(--orange);">🟠 West Europe (DR)</span>
 
-    <div class="zone" style="top:35px;left:10px;width:80%;height:210px;border-color:var(--accent);">
+    <div class="zone" style="top:40px;left:8px;width:92%;height:250px;border-color:var(--accent);">
       <span class="zone-label" style="background:rgba(79,140,255,0.15);color:var(--accent);">Hub VNet • 10.2.0.0/16</span>
     </div>
   </div>
 
-  <div class="node" id="n-fw2" style="top:230px;right:24%;">
+  <div class="node" id="n-fw2" style="top:280px;right:26%;">
     <span class="icon">🔥</span><span class="label">Firewall Premium</span>
   </div>
-  <div class="node" id="n-vpn2" style="top:230px;right:8%;">
+  <div class="node" id="n-vpn2" style="top:280px;right:5%;">
     <span class="icon">🔒</span><span class="label">VPN Gateway</span>
   </div>
-  <div class="node" id="n-bastion2" style="top:310px;right:24%;">
+  <div class="node" id="n-bastion2" style="top:380px;right:26%;">
     <span class="icon">🖥️</span><span class="label">Bastion</span>
   </div>
-  <div class="node" id="n-dns2" style="top:310px;right:8%;">
+  <div class="node" id="n-dns2" style="top:380px;right:5%;">
     <span class="icon">📡</span><span class="label">Private DNS</span>
   </div>
 
-  <div class="zone" style="top:410px;right:30px;width:45%;height:295px;border-color:var(--red);">
+  <div class="zone" style="top:500px;right:30px;width:45%;height:480px;border-color:var(--red);">
     <span class="zone-label" style="background:rgba(239,68,68,0.15);color:var(--red);">🔴 CDE Spoke • 10.20.0.0/16</span>
   </div>
 
-  <div class="node" id="n-app2" style="top:455px;right:25%;">
+  <div class="node" id="n-app2" style="top:550px;right:26%;">
     <span class="icon">📱</span><span class="label">App Service (P2v3)</span>
   </div>
-  <div class="node" id="n-vm2" style="top:455px;right:5%;">
+  <div class="node" id="n-vm2" style="top:550px;right:5%;">
     <span class="icon">💻</span><span class="label">VM (Trusted Launch)</span>
   </div>
-  <div class="node" id="n-sql2" style="top:540px;right:25%;border-color:var(--purple);">
+  <div class="node" id="n-sql2" style="top:660px;right:26%;border-color:var(--purple);">
     <span class="icon">🗄️</span><span class="label">SQL (Failover)</span>
   </div>
-  <div class="node" id="n-kv2" style="top:540px;right:5%;">
+  <div class="node" id="n-kv2" style="top:660px;right:5%;">
     <span class="icon">🔑</span><span class="label">Key Vault</span>
   </div>
-  <div class="node" id="n-storage2" style="top:620px;right:15%;">
+  <div class="node" id="n-storage2" style="top:770px;right:15%;">
     <span class="icon">💾</span><span class="label">Storage (GRS)</span>
   </div>
 
   <!-- Management Zone -->
-  <div class="node" id="n-sentinel" style="top:155px;left:50%;transform:translateX(-50%);border-color:var(--cyan);">
+  <div class="node" id="n-sentinel" style="top:200px;left:50%;transform:translateX(-50%);border-color:var(--cyan);">
     <span class="icon">👁️</span><span class="label">Sentinel + Log Analytics</span>
   </div>
-  <div class="node" id="n-defender" style="top:155px;left:78%;border-color:var(--cyan);">
+  <div class="node" id="n-defender" style="top:200px;left:80%;border-color:var(--cyan);">
     <span class="icon">🛡️</span><span class="label">Defender for Cloud</span>
   </div>
-  <div class="node" id="n-policy" style="top:155px;left:5%;border-color:var(--red);">
+  <div class="node" id="n-policy" style="top:200px;left:3%;border-color:var(--red);">
     <span class="icon">📋</span><span class="label">Azure Policy (PCI v4)</span>
   </div>
 
