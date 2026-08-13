@@ -1,0 +1,32 @@
+# Populate with your values - DO NOT commit real values to version control
+connectivity_subscription_id = "00000000-0000-0000-0000-000000000000"
+management_subscription_id   = "00000000-0000-0000-0000-000000000000"
+cde_subscription_id          = "00000000-0000-0000-0000-000000000000"
+
+primary_location = "northeurope"
+dr_location      = "westeurope"
+environment      = "prod"
+org_prefix       = "p24"
+
+hub_address_space_primary       = ["10.1.0.0/16"]
+hub_address_space_dr            = ["10.2.0.0/16"]
+spoke_cde_address_space_primary = ["10.10.0.0/16"]
+spoke_cde_address_space_dr      = ["10.20.0.0/16"]
+
+sql_admin_object_id  = "00000000-0000-0000-0000-000000000000"
+sql_admin_login_name = "sg-sql-admins-cde"
+
+hsm_admin_object_ids = ["00000000-0000-0000-0000-000000000000"]
+
+on_prem_gateway_ip     = ""
+on_prem_address_spaces = []
+
+custom_domain_name = "app.payment24.com"
+
+common_tags = {
+  Environment        = "Production"
+  PCIScope           = "CDE"
+  DataClassification = "CardholderData"
+  ManagedBy          = "Terraform"
+  Workload           = "Payment24-CDE"
+}
