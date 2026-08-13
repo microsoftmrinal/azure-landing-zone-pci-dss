@@ -2,6 +2,13 @@
 
 Production-ready Azure Landing Zone implementing a **PCI DSS v4.0 compliant Cardholder Data Environment (CDE)** using hub-spoke topology with defence-in-depth controls.
 
+### Interactive Visualizations
+
+| Diagram | View |
+|---------|------|
+| **Architecture Diagram** (5 views: topology, traffic flow, management groups, security layers, DR) | [Open Diagram](https://htmlpreview.github.io/?https://github.com/microsoftmrinal/azure-landing-zone-pci-dss/blob/main/docs/architecture-diagram.html) |
+| **Landing Zone Explained Simply** (14 animated slides, kid-friendly) | [Open Explanation](https://htmlpreview.github.io/?https://github.com/microsoftmrinal/azure-landing-zone-pci-dss/blob/main/docs/landing-zone-explained-for-kids.html) |
+
 ## Architecture Overview
 
 ```mermaid
