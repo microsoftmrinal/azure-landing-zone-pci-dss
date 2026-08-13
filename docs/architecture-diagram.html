@@ -6,17 +6,17 @@
 <title>Azure Landing Zone - PCI-DSS v4.0 Architecture</title>
 <style>
 :root {
-  --bg: #0f1729;
-  --card: #1a2340;
-  --border: #2a3a5c;
-  --accent: #4f8cff;
-  --green: #22c55e;
-  --red: #ef4444;
-  --orange: #f59e0b;
-  --purple: #a78bfa;
-  --cyan: #22d3ee;
-  --text: #e2e8f0;
-  --muted: #94a3b8;
+  --bg: #ffffff;
+  --card: #f8f9fa;
+  --border: #dee2e6;
+  --accent: #0066cc;
+  --green: #198754;
+  --red: #dc3545;
+  --orange: #fd7e14;
+  --purple: #6f42c1;
+  --cyan: #0dcaf0;
+  --text: #212529;
+  --muted: #6c757d;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -25,11 +25,11 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
 /* Header */
 .header {
   text-align: center; padding: 30px 20px 10px;
-  background: linear-gradient(180deg, #0f1729 0%, transparent 100%);
+  background: #f8f9fa;
 }
-.header h1 { font-size: 1.8em; letter-spacing: 1px; }
+.header h1 { font-size: 2.2em; letter-spacing: 1px; color: #212529; }
 .header h1 span { color: var(--accent); }
-.header p { color: var(--muted); margin-top: 5px; font-size: 0.95em; }
+.header p { color: var(--muted); margin-top: 5px; font-size: 1.05em; }
 
 /* Tab Navigation */
 .tabs {
@@ -37,11 +37,11 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
   flex-wrap: wrap;
 }
 .tab {
-  padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border);
-  background: var(--card); color: var(--muted); cursor: pointer;
-  font-size: 0.9em; transition: all 0.3s;
+  padding: 12px 24px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--card); color: var(--text); cursor: pointer;
+  font-size: 1em; font-weight: 600; transition: all 0.3s;
 }
-.tab:hover { border-color: var(--accent); color: var(--text); }
+.tab:hover { border-color: var(--accent); color: var(--accent); }
 .tab.active { background: var(--accent); color: white; border-color: var(--accent); }
 
 /* View container */
@@ -61,31 +61,32 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
   padding: 10px;
 }
 .zone-label {
-  font-size: 0.75em; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 1px; padding: 2px 10px; border-radius: 4px;
+  font-size: 0.85em; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; padding: 4px 12px; border-radius: 4px;
   display: inline-block; margin-bottom: 5px;
 }
 
 .node {
   position: absolute;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 8px 12px;
+  background: #ffffff;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 16px;
   text-align: center;
-  font-size: 0.78em;
+  font-size: 0.9em;
   transition: all 0.3s;
   cursor: default;
   z-index: 2;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 .node:hover {
   transform: scale(1.08);
   border-color: var(--accent);
-  box-shadow: 0 0 20px rgba(79,140,255,0.3);
+  box-shadow: 0 4px 20px rgba(0,102,204,0.2);
   z-index: 10;
 }
-.node .icon { font-size: 1.8em; display: block; margin-bottom: 3px; }
-.node .label { white-space: nowrap; }
+.node .icon { font-size: 2.4em; display: block; margin-bottom: 4px; }
+.node .label { white-space: nowrap; font-weight: 600; color: #212529; }
 
 /* Animated connection lines via SVG */
 .connections { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
@@ -108,15 +109,16 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
   position: relative;
 }
 .flow-box {
-  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-  padding: 15px 20px; text-align: center; min-width: 130px;
+  background: #ffffff; border: 2px solid var(--border); border-radius: 12px;
+  padding: 18px 24px; text-align: center; min-width: 140px;
   position: relative; z-index: 2;
   transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
-.flow-box:hover { border-color: var(--accent); box-shadow: 0 0 15px rgba(79,140,255,0.2); }
-.flow-box .icon { font-size: 2em; }
-.flow-box .name { font-size: 0.85em; margin-top: 4px; font-weight: 600; }
-.flow-box .detail { font-size: 0.7em; color: var(--muted); margin-top: 2px; }
+.flow-box:hover { border-color: var(--accent); box-shadow: 0 4px 15px rgba(0,102,204,0.15); }
+.flow-box .icon { font-size: 2.5em; }
+.flow-box .name { font-size: 0.95em; margin-top: 6px; font-weight: 700; color: #212529; }
+.flow-box .detail { font-size: 0.8em; color: var(--muted); margin-top: 3px; }
 
 .flow-pipe {
   flex: 1; height: 3px; position: relative; overflow: hidden;
@@ -136,8 +138,8 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
 
 .flow-section-title {
   width: 100%; max-width: 1100px;
-  font-size: 0.9em; color: var(--accent); font-weight: 600;
-  border-bottom: 1px solid var(--border); padding-bottom: 5px;
+  font-size: 1.05em; color: var(--accent); font-weight: 700;
+  border-bottom: 2px solid var(--border); padding-bottom: 8px;
   margin-top: 10px;
 }
 
@@ -160,15 +162,16 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
   position: relative;
 }
 .mg-node {
-  background: var(--card); border: 2px solid var(--border);
-  border-radius: 10px; padding: 14px 24px; text-align: center;
+  background: #ffffff; border: 2px solid var(--border);
+  border-radius: 10px; padding: 16px 28px; text-align: center;
   position: relative; transition: all 0.3s;
   animation: mgAppear 0.6s ease backwards;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
-.mg-node:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.4); }
-.mg-node .icon { font-size: 1.8em; }
-.mg-node .name { font-size: 0.9em; font-weight: 600; margin-top: 4px; }
-.mg-node .sub { font-size: 0.7em; color: var(--muted); }
+.mg-node:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.12); }
+.mg-node .icon { font-size: 2.2em; }
+.mg-node .name { font-size: 1em; font-weight: 700; margin-top: 4px; color: #212529; }
+.mg-node .sub { font-size: 0.8em; color: var(--muted); }
 @keyframes mgAppear { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
 
 .mg-connector {
@@ -208,17 +211,17 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
   50% { opacity: 1; }
 }
 
-.ring.r1 { width: 500px; height: 500px; border-color: #ef4444; background: rgba(239,68,68,0.05); animation-delay: 0s; }
-.ring.r2 { width: 400px; height: 400px; border-color: #f59e0b; background: rgba(245,158,11,0.05); animation-delay: 0.5s; }
-.ring.r3 { width: 300px; height: 300px; border-color: #a78bfa; background: rgba(167,139,250,0.05); animation-delay: 1s; }
-.ring.r4 { width: 200px; height: 200px; border-color: #22c55e; background: rgba(34,197,94,0.05); animation-delay: 1.5s; }
-.ring.r5 { width: 100px; height: 100px; border-color: #4f8cff; background: rgba(79,140,255,0.1); animation-delay: 2s; }
+.ring.r1 { width: 500px; height: 500px; border-color: #dc3545; background: rgba(220,53,69,0.04); animation-delay: 0s; }
+.ring.r2 { width: 400px; height: 400px; border-color: #fd7e14; background: rgba(253,126,20,0.04); animation-delay: 0.5s; }
+.ring.r3 { width: 300px; height: 300px; border-color: #6f42c1; background: rgba(111,66,193,0.04); animation-delay: 1s; }
+.ring.r4 { width: 200px; height: 200px; border-color: #198754; background: rgba(25,135,84,0.04); animation-delay: 1.5s; }
+.ring.r5 { width: 100px; height: 100px; border-color: #0066cc; background: rgba(0,102,204,0.06); animation-delay: 2s; }
 
-.ring.r1 .ring-label { background: rgba(239,68,68,0.2); color: #ef4444; }
-.ring.r2 .ring-label { background: rgba(245,158,11,0.2); color: #f59e0b; }
-.ring.r3 .ring-label { background: rgba(167,139,250,0.2); color: #a78bfa; }
-.ring.r4 .ring-label { background: rgba(34,197,94,0.2); color: #22c55e; }
-.ring.r5 .ring-label { background: rgba(79,140,255,0.2); color: #4f8cff; font-size: 0.9em; }
+.ring.r1 .ring-label { background: rgba(220,53,69,0.1); color: #dc3545; }
+.ring.r2 .ring-label { background: rgba(253,126,20,0.1); color: #fd7e14; }
+.ring.r3 .ring-label { background: rgba(111,66,193,0.1); color: #6f42c1; }
+.ring.r4 .ring-label { background: rgba(25,135,84,0.1); color: #198754; }
+.ring.r5 .ring-label { background: rgba(0,102,204,0.1); color: #0066cc; font-size: 0.9em; }
 
 .ring-detail {
   position: absolute; font-size: 0.7em; color: var(--muted);
@@ -242,9 +245,10 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
   flex-wrap: wrap; padding: 20px;
 }
 .dr-region {
-  background: var(--card); border: 2px solid var(--border);
+  background: #ffffff; border: 2px solid var(--border);
   border-radius: 16px; padding: 25px; min-width: 350px; flex: 1; max-width: 500px;
   position: relative; transition: all 0.3s;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
 }
 .dr-region:hover { border-color: var(--accent); }
 .dr-region.primary { border-color: var(--green); }
@@ -261,13 +265,13 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
 .dr-services { display: flex; flex-direction: column; gap: 10px; }
 .dr-svc {
   display: flex; align-items: center; gap: 12px;
-  background: var(--bg); padding: 10px 15px; border-radius: 8px;
+  background: var(--card); padding: 12px 16px; border-radius: 8px;
   border: 1px solid var(--border);
 }
-.dr-svc .icon { font-size: 1.5em; }
+.dr-svc .icon { font-size: 1.8em; }
 .dr-svc .info { flex: 1; }
-.dr-svc .name { font-weight: 600; font-size: 0.9em; }
-.dr-svc .detail { font-size: 0.75em; color: var(--muted); }
+.dr-svc .name { font-weight: 700; font-size: 0.95em; color: #212529; }
+.dr-svc .detail { font-size: 0.8em; color: var(--muted); }
 .dr-svc .status { font-size: 0.7em; padding: 3px 10px; border-radius: 12px; font-weight: 600; }
 .status-active { background: rgba(34,197,94,0.15); color: var(--green); }
 .status-passive { background: rgba(245,158,11,0.15); color: var(--orange); }
@@ -290,7 +294,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
   flex-wrap: wrap; padding: 15px;
   border-top: 1px solid var(--border); margin-top: 20px;
 }
-.legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8em; color: var(--muted); }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.9em; color: #212529; font-weight: 500; }
 .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
 
 /* Responsive */
@@ -644,15 +648,15 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
 
 </div>
 
-<div style="max-width:700px;margin:30px auto;background:var(--card);border-radius:12px;padding:20px;border:1px solid var(--border);">
-  <h3 style="margin-bottom:12px;font-size:1em;">⏱️ Recovery Targets</h3>
-  <table style="width:100%;font-size:0.9em;border-collapse:collapse;">
-    <tr style="border-bottom:1px solid var(--border);"><th style="text-align:left;padding:8px;color:var(--muted);">Component</th><th style="padding:8px;color:var(--muted);">Strategy</th><th style="padding:8px;color:var(--muted);">RTO</th><th style="padding:8px;color:var(--muted);">RPO</th></tr>
-    <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px;">🚪 Front Door</td><td style="padding:8px;text-align:center;">Active-Active</td><td style="padding:8px;text-align:center;color:var(--green);">0 min</td><td style="padding:8px;text-align:center;color:var(--green);">0</td></tr>
-    <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px;">📱 App Service</td><td style="padding:8px;text-align:center;">Active-Passive</td><td style="padding:8px;text-align:center;color:var(--green);">&lt; 5 min</td><td style="padding:8px;text-align:center;color:var(--green);">0</td></tr>
-    <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px;">🗄️ Azure SQL</td><td style="padding:8px;text-align:center;">Auto-Failover Group</td><td style="padding:8px;text-align:center;color:var(--orange);">&lt; 60 min</td><td style="padding:8px;text-align:center;color:var(--green);">&lt; 5 sec</td></tr>
-    <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px;">🔥 Firewall</td><td style="padding:8px;text-align:center;">Per-Region</td><td style="padding:8px;text-align:center;color:var(--green);">0</td><td style="padding:8px;text-align:center;">N/A</td></tr>
-    <tr><td style="padding:8px;">🔑 Key Vault / HSM</td><td style="padding:8px;text-align:center;">Geo-Replicated</td><td style="padding:8px;text-align:center;color:var(--green);">Auto</td><td style="padding:8px;text-align:center;color:var(--green);">~0</td></tr>
+<div style="max-width:700px;margin:30px auto;background:#ffffff;border-radius:12px;padding:20px;border:2px solid var(--border);box-shadow:0 2px 10px rgba(0,0,0,0.06);">
+  <h3 style="margin-bottom:12px;font-size:1.1em;color:#212529;">⏱️ Recovery Targets</h3>
+  <table style="width:100%;font-size:0.95em;border-collapse:collapse;">
+    <tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:10px;color:#212529;">Component</th><th style="padding:10px;color:#212529;">Strategy</th><th style="padding:10px;color:#212529;">RTO</th><th style="padding:10px;color:#212529;">RPO</th></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:10px;">🚪 Front Door</td><td style="padding:10px;text-align:center;">Active-Active</td><td style="padding:10px;text-align:center;color:var(--green);font-weight:700;">0 min</td><td style="padding:10px;text-align:center;color:var(--green);font-weight:700;">0</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:10px;">📱 App Service</td><td style="padding:10px;text-align:center;">Active-Passive</td><td style="padding:10px;text-align:center;color:var(--green);font-weight:700;">&lt; 5 min</td><td style="padding:10px;text-align:center;color:var(--green);font-weight:700;">0</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:10px;">🗄️ Azure SQL</td><td style="padding:10px;text-align:center;">Auto-Failover Group</td><td style="padding:10px;text-align:center;color:var(--orange);font-weight:700;">&lt; 60 min</td><td style="padding:10px;text-align:center;color:var(--green);font-weight:700;">&lt; 5 sec</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:10px;">🔥 Firewall</td><td style="padding:10px;text-align:center;">Per-Region</td><td style="padding:10px;text-align:center;color:var(--green);font-weight:700;">0</td><td style="padding:10px;text-align:center;">N/A</td></tr>
+    <tr><td style="padding:10px;">🔑 Key Vault / HSM</td><td style="padding:10px;text-align:center;">Geo-Replicated</td><td style="padding:10px;text-align:center;color:var(--green);font-weight:700;">Auto</td><td style="padding:10px;text-align:center;color:var(--green);font-weight:700;">~0</td></tr>
   </table>
 </div>
 </div>
