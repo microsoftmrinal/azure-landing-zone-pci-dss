@@ -69,6 +69,7 @@ resource "azurerm_linux_web_app" "cde" {
     always_on           = true
     health_check_path   = "/health"
 
+    vnet_route_all_enabled        = true
     ip_restriction_default_action = "Deny"
   }
 
@@ -84,9 +85,8 @@ resource "azurerm_linux_web_app" "cde" {
   }
 
   app_settings = {
-    "WEBSITE_DNS_SERVER"                 = "168.63.129.16"
-    "WEBSITE_VNET_ROUTE_ALL"             = "1"
-    "SCM_DO_BUILD_DURING_DEPLOYMENT"     = "true"
+    "WEBSITE_DNS_SERVER"                    = "168.63.129.16"
+    "SCM_DO_BUILD_DURING_DEPLOYMENT"        = "true"
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = "" # Set via CI/CD
   }
 

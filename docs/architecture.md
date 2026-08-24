@@ -15,7 +15,36 @@ This Azure Landing Zone implements a **PCI DSS v4.0 compliant Cardholder Data En
 7. **Active DR** — Front Door routing + SQL auto-failover group across NEU ↔ WEU
 8. **Defence-in-depth** — Five concentric layers (Edge → Network → Identity → App → Data)
 
-## Management Group Hierarchy
+## Phased Rollout
+
+The stack is gated by feature flags in `environments/prod/variables.tf` so it can be
+stood up incrementally and expanded later with a plain `terraform apply` (Terraform is
+additive — enabling a later phase only *creates* new resources).
+
+| Flag | Default | Deploys |
+|------|---------|---------|
+| `deploy_vpn_gateway` | `true` | Hub VPN Gateway + spoke gateway-transit peering (hub/spoke S2S) |
+| `deploy_key_platform` | `true` | Managed HSM, Key Vault, Disk Encryption Set (VM CMK) |
+| `deploy_compute_vm` | `true` | Client VM in the CDE spoke compute subnet |
+| `deploy_data_platform` | `false` | Azure SQL + immutable audit storage |
+| `deploy_application_platform` | `false` | App Service + Front Door Premium / WAF |
+
+**Phase 1 minimum** (governance + hub/VPN GW + firewall + spoke + key platform + VM):
+leave the two data/app flags `false`. Front Door is intentionally *not* deployed in
+phase 1 — it takes the App Service as its private-link origin, so it has no origin until
+the application platform is enabled.
+
+**Firewall SKU:** `firewall_sku_tier` may be `Standard` for phase 1 and upgraded to
+`Premium` in place. IDPS (intrusion detection) is only configured on Premium. PCI DSS
+CDE scope ultimately requires Premium for IDPS + TLS inspection before go-live.
+
+**Operational notes:**
+- The VPN Gateway takes ~30–45 min to provision on first apply.
+- Managed HSM requires a manual activation/security-domain download after creation.
+- `encryption_at_host` on the VM requires the `EncryptionAtHost` feature registered on the CDE subscription.
+- The client VM is reached via the hub Azure Bastion; the compute NSG allows SSH/RDP only from `management_inbound_prefixes` (defaults to the hub range).
+
+
 
 ```
 Tenant Root Group
