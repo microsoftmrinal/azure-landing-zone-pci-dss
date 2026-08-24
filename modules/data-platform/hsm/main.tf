@@ -27,6 +27,10 @@ variable "dns_zone_id" {
   type = string
 }
 
+variable "log_analytics_workspace_id" {
+  type = string
+}
+
 variable "common_tags" {
   type = map(string)
 }
@@ -125,8 +129,9 @@ resource "azurerm_private_endpoint" "keyvault" {
 
 # Diagnostic settings for Key Vault
 resource "azurerm_monitor_diagnostic_setting" "keyvault" {
-  name               = "diag-kv-to-law"
-  target_resource_id = azurerm_key_vault.cde.id
+  name                       = "diag-kv-to-law"
+  target_resource_id         = azurerm_key_vault.cde.id
+  log_analytics_workspace_id = var.log_analytics_workspace_id
 
   enabled_log {
     category_group = "allLogs"
@@ -139,6 +144,49 @@ resource "azurerm_monitor_diagnostic_setting" "keyvault" {
 }
 
 data "azurerm_client_config" "current" {}
+
+# --- Disk Encryption Set for VM CMK (linked to HSM-backed key) ---
+resource "azurerm_key_vault_key" "des" {
+  name            = "key-des-vm-cde"
+  key_vault_id    = azurerm_key_vault.cde.id
+  key_type        = "RSA-HSM"
+  key_size        = 3072
+  expiration_date = timeadd(timestamp(), "8760h")
+
+  key_opts = [
+    "unwrapKey",
+    "wrapKey",
+    "encrypt",
+    "decrypt",
+  ]
+
+  rotation_policy {
+    automatic {
+      time_before_expiry = "P30D"
+    }
+    expire_after         = "P365D"
+    notify_before_expiry = "P30D"
+  }
+}
+
+resource "azurerm_disk_encryption_set" "vm" {
+  name                = "des-${var.org_prefix}-${var.environment}-${local.region_code}"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  key_vault_key_id    = azurerm_key_vault_key.des.id
+  tags                = var.common_tags
+
+  identity {
+    type = "SystemAssigned"
+  }
+}
+
+# Allow the DES managed identity to wrap/unwrap the CMK (RBAC-enabled vault).
+resource "azurerm_role_assignment" "des_kv_crypto" {
+  scope                = azurerm_key_vault.cde.id
+  role_definition_name = "Key Vault Crypto Service Encryption User"
+  principal_id         = azurerm_disk_encryption_set.vm.identity[0].principal_id
+}
 
 output "key_vault_id" {
   value = azurerm_key_vault.cde.id
@@ -154,4 +202,8 @@ output "tde_key_id" {
 
 output "hsm_id" {
   value = azurerm_key_vault_managed_hardware_security_module.this.id
+}
+
+output "disk_encryption_set_id" {
+  value = azurerm_disk_encryption_set.vm.id
 }

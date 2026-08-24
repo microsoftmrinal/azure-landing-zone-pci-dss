@@ -57,8 +57,13 @@ resource "azurerm_firewall_policy" "this" {
     proxy_enabled = true
   }
 
-  intrusion_detection {
-    mode = "Deny"
+  # IDPS is a Premium-only capability. Omitted on Standard so the policy applies;
+  # flip firewall_sku_tier to "Premium" to enable in-place before go-live.
+  dynamic "intrusion_detection" {
+    for_each = var.sku_tier == "Premium" ? [1] : []
+    content {
+      mode = "Deny"
+    }
   }
 
   insights {
@@ -143,8 +148,11 @@ resource "azurerm_firewall_policy_rule_collection_group" "cde_rules" {
     action   = "Allow"
 
     rule {
-      name              = "windows-update"
-      protocols { type = "Https"; port = 443 }
+      name = "windows-update"
+      protocols {
+        type = "Https"
+        port = 443
+      }
       source_addresses  = ["10.0.0.0/8"]
       destination_fqdns = ["*.update.microsoft.com", "*.windowsupdate.com"]
     }

@@ -45,7 +45,7 @@ resource "azurerm_management_group_policy_assignment" "deny_public_ip" {
   display_name         = "Deny Public IP Addresses in CDE"
   management_group_id  = var.cde_management_group_id
   policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/6c112d4e-5bc7-47ae-a041-ea2d9dcbd749"
-  enforcement_mode     = "Default"
+  enforce              = true
 }
 
 # Allowed locations - restrict to EU regions only
@@ -68,7 +68,7 @@ resource "azurerm_management_group_policy_assignment" "storage_encryption" {
   display_name         = "Require Storage Account Encryption"
   management_group_id  = var.cde_management_group_id
   policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/b5ec538c-daa0-4006-8596-35468b9148e8"
-  enforcement_mode     = "Default"
+  enforce              = true
 }
 
 # Require TLS 1.2
@@ -77,7 +77,7 @@ resource "azurerm_management_group_policy_assignment" "require_tls" {
   display_name         = "Require minimum TLS 1.2"
   management_group_id  = var.root_management_group_id
   policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/fe83a0eb-a853-422d-afc8-c7a6999afcec"
-  enforcement_mode     = "Default"
+  enforce              = true
 }
 
 # Deny public network access on SQL
@@ -86,7 +86,7 @@ resource "azurerm_management_group_policy_assignment" "deny_sql_public" {
   display_name         = "Deny SQL Public Network Access"
   management_group_id  = var.cde_management_group_id
   policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/1b8ca024-1d5c-4dec-8995-b1a932b41780"
-  enforcement_mode     = "Default"
+  enforce              = true
 }
 
 # Require tags on resources

@@ -30,6 +30,18 @@ variable "workload" {
   type = string
 }
 
+variable "use_remote_gateways" {
+  description = "Use the hub VPN/ER gateway for transit. Must be false until the hub gateway + gateway-transit peering exist."
+  type        = bool
+  default     = false
+}
+
+variable "management_inbound_prefixes" {
+  description = "Source prefixes (e.g. the hub Bastion subnet/VNet) allowed inbound to the compute subnet on SSH/RDP. Empty = deny all inbound."
+  type        = list(string)
+  default     = []
+}
+
 variable "common_tags" {
   type = map(string)
 }
@@ -123,7 +135,7 @@ resource "azurerm_virtual_network_peering" "spoke_to_hub" {
   remote_virtual_network_id    = var.hub_vnet_id
   allow_forwarded_traffic      = true
   allow_virtual_network_access = true
-  use_remote_gateways          = true
+  use_remote_gateways          = var.use_remote_gateways
 }
 
 # NSG for compute subnet
@@ -132,6 +144,22 @@ resource "azurerm_network_security_group" "compute" {
   location            = azurerm_resource_group.spoke.location
   resource_group_name = azurerm_resource_group.spoke.name
   tags                = var.common_tags
+
+  # Allow SSH/RDP inbound only from approved management sources (e.g. hub Bastion).
+  dynamic "security_rule" {
+    for_each = length(var.management_inbound_prefixes) > 0 ? [1] : []
+    content {
+      name                       = "AllowManagementInbound"
+      priority                   = 200
+      direction                  = "Inbound"
+      access                     = "Allow"
+      protocol                   = "Tcp"
+      source_port_range          = "*"
+      destination_port_ranges    = ["22", "3389"]
+      source_address_prefixes    = var.management_inbound_prefixes
+      destination_address_prefix = "*"
+    }
+  }
 
   security_rule {
     name                       = "DenyAllInbound"

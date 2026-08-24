@@ -76,7 +76,7 @@ resource "azurerm_sentinel_alert_rule_scheduled" "data_exfil" {
   name                       = "pci-data-exfiltration"
   display_name               = "PCI - Potential Data Exfiltration"
   log_analytics_workspace_id = azurerm_log_analytics_workspace.central.id
-  severity                   = "Critical"
+  severity                   = "High"
   query_frequency            = "PT10M"
   query_period               = "PT1H"
   trigger_operator           = "GreaterThan"

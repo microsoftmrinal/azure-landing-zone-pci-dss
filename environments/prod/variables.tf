@@ -65,15 +65,55 @@ variable "spoke_cde_address_space_dr" {
   default     = ["10.20.0.0/16"]
 }
 
+# --- Feature flags (phased rollout) ---
+# Phase 1 minimum = governance + connectivity (hub/VPN GW/firewall/spoke) + key platform + client VM.
+# Flip these to true and re-run `terraform apply` to layer in data and app platforms later.
+variable "deploy_vpn_gateway" {
+  description = "Deploy the hub VPN Gateway and enable spoke gateway transit (hub/spoke S2S)."
+  type        = bool
+  default     = true
+}
+
+variable "deploy_key_platform" {
+  description = "Deploy the Managed HSM / Key Vault / Disk Encryption Set. Required by the client VM (CMK disk encryption)."
+  type        = bool
+  default     = true
+}
+
+variable "deploy_compute_vm" {
+  description = "Deploy the client VM into the CDE spoke compute subnet."
+  type        = bool
+  default     = true
+}
+
+variable "deploy_data_platform" {
+  description = "Deploy Azure SQL + immutable audit storage. Off for the phase-1 minimum."
+  type        = bool
+  default     = false
+}
+
+variable "deploy_application_platform" {
+  description = "Deploy App Service + Front Door Premium/WAF. Off for the phase-1 minimum (Front Door has no origin without App Service)."
+  type        = bool
+  default     = false
+}
+
 # --- Firewall ---
 variable "firewall_sku_tier" {
-  description = "Azure Firewall SKU tier"
+  description = "Azure Firewall SKU tier. Standard for phase 1; upgrade to Premium (in place) for IDPS + TLS inspection before go-live in PCI scope."
   type        = string
-  default     = "Premium"
+  default     = "Standard"
   validation {
-    condition     = var.firewall_sku_tier == "Premium"
-    error_message = "PCI-DSS requires Firewall Premium for IDPS and TLS inspection."
+    condition     = contains(["Standard", "Premium"], var.firewall_sku_tier)
+    error_message = "firewall_sku_tier must be 'Standard' or 'Premium'. PCI-DSS CDE scope ultimately requires Premium for IDPS and TLS inspection."
   }
+}
+
+# --- VPN Gateway ---
+variable "vpn_gateway_sku" {
+  description = "VPN Gateway SKU. *AZ SKUs are zone-redundant (recommended)."
+  type        = string
+  default     = "VpnGw2AZ"
 }
 
 # --- SQL ---
@@ -136,12 +176,8 @@ variable "custom_domain_name" {
 
 # --- Compute ---
 variable "admin_ssh_public_key" {
-  description = "SSH public key for VM admin user (retrieve from Key Vault in pipeline)"
+  description = "SSH public key for VM admin user (retrieve from Key Vault in pipeline). Required when deploy_compute_vm = true."
   type        = string
   sensitive   = true
-}
-
-variable "disk_encryption_set_id" {
-  description = "Disk Encryption Set ID for VM OS disk encryption (linked to HSM key)"
-  type        = string
+  default     = null
 }
