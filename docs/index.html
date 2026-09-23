@@ -8,71 +8,137 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   font-family: 'Segoe UI', system-ui, sans-serif;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: #0f172a;
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
   color: #e2e8f0;
 }
-h1 { font-size: 2.2em; text-align: center; margin-bottom: 10px; }
+header {
+  padding: 32px 20px 24px;
+  background: linear-gradient(135deg, #111827 0%, #172554 100%);
+  border-bottom: 1px solid #334155;
+}
+h1 { font-size: 2.2em; text-align: center; margin-bottom: 8px; }
 h1 span { color: #4f8cff; }
-.subtitle { color: #94a3b8; text-align: center; margin-bottom: 50px; font-size: 1.1em; }
-.cards { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; max-width: 900px; }
-.card {
+.subtitle { color: #94a3b8; text-align: center; font-size: 1.1em; }
+main { width: 100%; }
+.viewer-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 18px 20px;
+}
+.tabs { display: flex; gap: 8px; }
+.tab {
   background: #1e293b;
   border: 1px solid #334155;
-  border-radius: 16px;
-  padding: 35px 30px;
-  width: 380px;
-  text-align: center;
-  text-decoration: none;
+  border-radius: 6px;
+  padding: 10px 16px;
   color: #e2e8f0;
-  transition: all 0.3s ease;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
 }
-.card:hover {
-  transform: translateY(-8px);
-  border-color: #4f8cff;
-  box-shadow: 0 20px 50px rgba(79,140,255,0.2);
+.tab:hover, .tab:focus-visible { border-color: #60a5fa; outline: none; }
+.tab[aria-selected="true"] { background: #2563eb; border-color: #60a5fa; color: #fff; }
+.open-link { color: #93c5fd; font-size: 0.9em; }
+.diagram-panel { display: none; }
+.diagram-panel.active { display: block; }
+.diagram-frame {
+  display: block;
+  width: 100%;
+  height: 1250px;
+  border: 0;
+  background: #fff;
 }
-.card .icon { font-size: 4em; margin-bottom: 15px; display: block; }
-.card h2 { font-size: 1.3em; margin-bottom: 10px; }
-.card p { color: #94a3b8; font-size: 0.95em; line-height: 1.6; }
-.card .tag {
-  display: inline-block; margin-top: 15px;
-  padding: 5px 15px; border-radius: 20px;
-  font-size: 0.8em; font-weight: 600;
+.diagram-frame.simple { height: 900px; }
+footer {
+  padding: 24px 20px;
+  color: #64748b;
+  font-size: 0.85em;
+  text-align: center;
+  border-top: 1px solid #334155;
 }
-.tag-technical { background: rgba(79,140,255,0.15); color: #4f8cff; }
-.tag-simple { background: rgba(34,197,94,0.15); color: #22c55e; }
-footer { margin-top: 50px; color: #475569; font-size: 0.85em; text-align: center; }
 footer a { color: #4f8cff; text-decoration: none; }
+@media (max-width: 700px) {
+  h1 { font-size: 1.65em; }
+  .viewer-toolbar { align-items: stretch; flex-direction: column; }
+  .tabs { display: grid; grid-template-columns: 1fr 1fr; }
+  .tab { padding: 10px 8px; }
+  .open-link { text-align: right; }
+  .diagram-frame { height: 1350px; }
+  .diagram-frame.simple { height: 760px; }
+}
 </style>
 </head>
 <body>
-  <h1>☁️ Azure Landing Zone — <span>PCI-DSS v4.0</span></h1>
-  <p class="subtitle">Interactive architecture visualizations for Payment24</p>
+  <header>
+    <h1>☁️ Azure Landing Zone — <span>PCI-DSS v4.0</span></h1>
+    <p class="subtitle">Interactive architecture visualizations for Payment24</p>
+  </header>
 
-  <div class="cards">
-    <a class="card" href="architecture-diagram.html">
-      <span class="icon">🏗️</span>
-      <h2>Architecture Diagram</h2>
-      <p>Full technical architecture with animated traffic flows, management group hierarchy, 5 security layers, and disaster recovery topology.</p>
-      <span class="tag tag-technical">Technical • 5 Views</span>
-    </a>
+  <main>
+    <div class="viewer-toolbar">
+      <div class="tabs" role="tablist" aria-label="Diagram views">
+        <button class="tab" id="architecture-tab" type="button" role="tab" aria-selected="true" aria-controls="architecture-panel">Architecture</button>
+        <button class="tab" id="simple-tab" type="button" role="tab" aria-selected="false" aria-controls="simple-panel">Simple explanation</button>
+      </div>
+      <a class="open-link" id="open-link" href="architecture-diagram.html" target="_blank" rel="noopener">Open current view in a new tab</a>
+    </div>
 
-    <a class="card" href="landing-zone-explained-for-kids.html">
-      <span class="icon">🏰</span>
-      <h2>Landing Zone Explained Simply</h2>
-      <p>The entire landing zone explained like a castle story — animated slides with visual metaphors anyone can understand.</p>
-      <span class="tag tag-simple">Simple • 14 Slides</span>
-    </a>
-  </div>
+    <section class="diagram-panel active" id="architecture-panel" role="tabpanel" aria-labelledby="architecture-tab">
+      <iframe class="diagram-frame" src="architecture-diagram.html" title="Interactive PCI-DSS Azure landing zone architecture"></iframe>
+    </section>
+    <section class="diagram-panel" id="simple-panel" role="tabpanel" aria-labelledby="simple-tab" hidden>
+      <iframe class="diagram-frame simple" src="landing-zone-explained-for-kids.html" title="Azure landing zone explained simply" loading="lazy"></iframe>
+    </section>
+  </main>
 
   <footer>
     <p>Repository: <a href="https://github.com/microsoftmrinal/azure-landing-zone-pci-dss">microsoftmrinal/azure-landing-zone-pci-dss</a></p>
   </footer>
+
+  <script>
+    const tabs = document.querySelectorAll('[role="tab"]');
+    const panels = document.querySelectorAll('[role="tabpanel"]');
+    const openLink = document.getElementById('open-link');
+
+    function selectTab(selectedTab) {
+      tabs.forEach((tab) => {
+        const selected = tab === selectedTab;
+        const panel = document.getElementById(tab.getAttribute('aria-controls'));
+        tab.setAttribute('aria-selected', selected);
+        panel.classList.toggle('active', selected);
+        panel.hidden = !selected;
+      });
+
+      openLink.href = selectedTab.id === 'architecture-tab'
+        ? 'architecture-diagram.html'
+        : 'landing-zone-explained-for-kids.html';
+
+      history.replaceState(null, '', selectedTab.id === 'architecture-tab' ? '#architecture' : '#simple');
+    }
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => selectTab(tab));
+      tab.addEventListener('keydown', (event) => {
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+        const currentIndex = Array.from(tabs).indexOf(tab);
+        const offset = event.key === 'ArrowRight' ? 1 : -1;
+        const nextTab = tabs[(currentIndex + offset + tabs.length) % tabs.length];
+        nextTab.focus();
+        selectTab(nextTab);
+      });
+    });
+
+    function selectTabFromHash() {
+      selectTab(document.getElementById(location.hash === '#simple' ? 'simple-tab' : 'architecture-tab'));
+    }
+
+    window.addEventListener('hashchange', selectTabFromHash);
+    selectTabFromHash();
+  </script>
 </body>
 </html>
