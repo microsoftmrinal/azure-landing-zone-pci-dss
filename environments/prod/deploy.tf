@@ -82,6 +82,13 @@ module "firewall_primary" {
   environment                = var.environment
   sku_tier                   = var.firewall_sku_tier
   common_tags                = var.common_tags
+
+  cde_address_prefixes          = var.spoke_cde_address_space_primary
+  app_port                      = var.app_port
+  client_b_inbound_prefixes     = var.client_b_inbound_prefixes
+  client_a_destination_prefixes = var.client_a_destination_prefixes
+  client_a_destination_ports    = var.client_a_destination_ports
+  client_a_egress_public_ip_id  = var.client_a_egress_public_ip_id
 }
 
 module "spoke_cde_primary" {
@@ -101,6 +108,8 @@ module "spoke_cde_primary" {
   workload                    = "cde"
   use_remote_gateways         = var.deploy_vpn_gateway
   management_inbound_prefixes = var.hub_address_space_primary
+  app_port                    = var.app_port
+  app_inbound_prefixes        = var.client_b_inbound_prefixes
   common_tags                 = var.common_tags
 
   # Ensure the hub VPN gateway is fully provisioned before the spoke peering
@@ -122,6 +131,36 @@ resource "azurerm_virtual_network_peering" "hub_to_spoke_cde" {
   allow_gateway_transit        = true
 
   depends_on = [module.hub_primary]
+}
+
+# Steer VPN-originated traffic for the CDE through the firewall so the VPN path is
+# inspected and symmetric with the spoke 0.0.0.0/0 -> firewall route. BGP route
+# propagation must stay enabled on the GatewaySubnet route table.
+resource "azurerm_route_table" "gateway" {
+  count                         = var.deploy_vpn_gateway ? 1 : 0
+  provider                      = azurerm.connectivity
+  name                          = "rt-gateway-${var.environment}-neu"
+  location                      = var.primary_location
+  resource_group_name           = module.hub_primary.resource_group_name
+  disable_bgp_route_propagation = false
+  tags                          = var.common_tags
+
+  dynamic "route" {
+    for_each = { for i, p in var.spoke_cde_address_space_primary : "cde-${i}" => p }
+    content {
+      name                   = route.key
+      address_prefix         = route.value
+      next_hop_type          = "VirtualAppliance"
+      next_hop_in_ip_address = module.firewall_primary.private_ip_address
+    }
+  }
+}
+
+resource "azurerm_subnet_route_table_association" "gateway" {
+  count          = var.deploy_vpn_gateway ? 1 : 0
+  provider       = azurerm.connectivity
+  subnet_id      = module.hub_primary.gateway_subnet_id
+  route_table_id = azurerm_route_table.gateway[0].id
 }
 
 module "dns" {
@@ -157,7 +196,7 @@ module "hsm" {
   common_tags                = var.common_tags
 }
 
-# --- Phase 2b: Client VM (CDE spoke) ---
+# --- Phase 2b: IIS VM (CDE spoke) behind an internal load balancer + Private Link Service ---
 
 module "compute_cde" {
   source = "../../modules/application-platform/compute"
@@ -167,15 +206,18 @@ module "compute_cde" {
     azurerm = azurerm.cde
   }
 
-  resource_group_name        = module.spoke_cde_primary.resource_group_name
-  location                   = var.primary_location
-  org_prefix                 = var.org_prefix
-  environment                = var.environment
-  subnet_id                  = module.spoke_cde_primary.compute_subnet_id
-  admin_ssh_public_key       = var.admin_ssh_public_key
-  disk_encryption_set_id     = module.hsm[0].disk_encryption_set_id
-  log_analytics_workspace_id = module.sentinel.workspace_id
-  common_tags                = var.common_tags
+  resource_group_name         = module.spoke_cde_primary.resource_group_name
+  location                    = var.primary_location
+  org_prefix                  = var.org_prefix
+  environment                 = var.environment
+  subnet_id                   = module.spoke_cde_primary.compute_subnet_id
+  private_link_nat_subnet_id  = module.spoke_cde_primary.private_link_service_subnet_id
+  admin_password              = var.vm_admin_password
+  disk_encryption_set_id      = module.hsm[0].disk_encryption_set_id
+  app_port                    = var.app_port
+  app_allowed_source_prefixes = concat(module.spoke_cde_primary.private_link_service_subnet_prefixes, var.client_b_inbound_prefixes)
+  log_analytics_workspace_id  = module.sentinel.workspace_id
+  common_tags                 = var.common_tags
 
   depends_on = [module.hsm]
 }
@@ -224,40 +266,37 @@ module "storage" {
   common_tags                = var.common_tags
 }
 
-# --- Phase 3: Application Platform (App Service + Front Door) — off by default ---
-
-module "app_service" {
-  source = "../../modules/application-platform/app-service"
-  count  = var.deploy_application_platform ? 1 : 0
-
-  providers = {
-    azurerm = azurerm.cde
-  }
-
-  resource_group_name        = module.spoke_cde_primary.resource_group_name
-  location                   = var.primary_location
-  org_prefix                 = var.org_prefix
-  environment                = var.environment
-  integration_subnet_id      = module.spoke_cde_primary.app_integration_subnet_id
-  private_endpoint_subnet_id = module.spoke_cde_primary.private_endpoints_subnet_id
-  log_analytics_workspace_id = module.sentinel.workspace_id
-  dns_zone_id                = module.dns.appservice_dns_zone_id
-  common_tags                = var.common_tags
-}
+# --- Phase 3: Front Door Premium + WAF (private VM origins) — off by default ---
+# Requires deploy_compute_vm = true. Approve the Front Door private endpoint connection
+# on each regional Private Link Service after apply.
 
 module "front_door" {
   source = "../../modules/connectivity/front-door"
-  count  = var.deploy_application_platform ? 1 : 0
+  count  = var.deploy_front_door ? 1 : 0
 
   providers = {
     azurerm = azurerm.connectivity
   }
 
-  resource_group_name        = module.hub_primary.resource_group_name
-  org_prefix                 = var.org_prefix
-  environment                = var.environment
-  origin_hostname            = module.app_service[0].default_hostname
-  origin_app_service_id      = module.app_service[0].app_service_id
+  resource_group_name = module.hub_primary.resource_group_name
+  org_prefix          = var.org_prefix
+  environment         = var.environment
+  origin_hostname     = var.app_origin_hostname
+  origin_port         = var.app_port
+  origins = concat(
+    [{
+      name                    = "neu"
+      private_link_service_id = module.compute_cde[0].private_link_service_id
+      location                = var.primary_location
+      priority                = 1
+    }],
+    var.dr_private_link_service_id == null ? [] : [{
+      name                    = "weu"
+      private_link_service_id = var.dr_private_link_service_id
+      location                = var.dr_location
+      priority                = 2
+    }]
+  )
   log_analytics_workspace_id = module.sentinel.workspace_id
   custom_domain_name         = var.custom_domain_name
   common_tags                = var.common_tags

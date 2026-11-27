@@ -8,7 +8,6 @@ var zones = [
   'privatelink.database.windows.net'
   'privatelink.blob.core.windows.net'
   'privatelink.vaultcore.azure.net'
-  'privatelink.azurewebsites.net'
   'privatelink.managedhsm.azure.net'
 ]
 
@@ -32,5 +31,4 @@ resource vnetLinks 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-0
 output sqlDnsZoneId string = dnsZones[0].id
 output blobDnsZoneId string = dnsZones[1].id
 output keyVaultDnsZoneId string = dnsZones[2].id
-output appServiceDnsZoneId string = dnsZones[3].id
-output hsmDnsZoneId string = dnsZones[4].id
+output hsmDnsZoneId string = dnsZones[3].id

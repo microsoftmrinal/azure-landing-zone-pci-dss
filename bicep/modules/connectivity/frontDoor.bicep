@@ -4,11 +4,17 @@ param orgPrefix string
 @description('Environment')
 param environment string
 
-@description('App Service default hostname')
+@description('FQDN used for SNI, the origin host header and certificate name validation. Must match the IIS certificate (shared by all regional origins).')
 param originHostname string
 
-@description('App Service resource ID for Private Link')
-param originAppServiceId string
+@description('HTTPS port IIS listens on at the origin')
+param originPort int = 8082
+
+@description('HTTPS readiness path probed on each origin')
+param healthProbePath string = '/health'
+
+@description('Regional private origins: [{ name, privateLinkServiceId, location, priority, weight? }]. Lowest priority is preferred; higher priorities receive traffic on failover.')
+param origins array
 
 @description('Log Analytics workspace resource ID')
 param logAnalyticsWorkspaceId string
@@ -40,34 +46,36 @@ resource originGroup 'Microsoft.Cdn/profiles/originGroups@2023-07-01-preview' = 
       successfulSamplesRequired: 3
     }
     healthProbeSettings: {
-      probePath: '/health'
+      probePath: healthProbePath
       probeProtocol: 'Https'
       probeIntervalInSeconds: 30
-      probeRequestType: 'HEAD'
+      probeRequestType: 'GET'
     }
     sessionAffinityState: 'Disabled'
   }
 }
 
-resource origin 'Microsoft.Cdn/profiles/originGroups/origins@2023-07-01-preview' = {
+// Private origins cannot be mixed with public origins in the same origin group.
+// Each connection request must be approved on the regional Private Link Service.
+resource originResources 'Microsoft.Cdn/profiles/originGroups/origins@2023-07-01-preview' = [for o in origins: {
   parent: originGroup
-  name: 'origin-app-${environment}'
+  name: 'origin-app-${o.name}-${environment}'
   properties: {
     hostName: originHostname
     originHostHeader: originHostname
     httpPort: 80
-    httpsPort: 443
-    priority: 1
-    weight: 1000
+    httpsPort: originPort
+    priority: o.priority
+    weight: o.?weight ?? 1000
     enabledState: 'Enabled'
+    enforceCertificateNameCheck: true
     sharedPrivateLinkResource: {
-      privateLink: { id: originAppServiceId }
-      privateLinkLocation: 'northeurope'
-      groupId: 'sites'
+      privateLink: { id: o.privateLinkServiceId }
+      privateLinkLocation: o.location
       requestMessage: 'Front Door Private Link'
     }
   }
-}
+}]
 
 resource route 'Microsoft.Cdn/profiles/afdEndpoints/routes@2023-07-01-preview' = {
   parent: endpoint
@@ -80,7 +88,7 @@ resource route 'Microsoft.Cdn/profiles/afdEndpoints/routes@2023-07-01-preview' =
     forwardingProtocol: 'HttpsOnly'
     linkToDefaultDomain: 'Enabled'
   }
-  dependsOn: [origin]
+  dependsOn: [originResources]
 }
 
 resource wafPolicy 'Microsoft.Network/FrontDoorWebApplicationFirewallPolicies@2022-05-01' = {

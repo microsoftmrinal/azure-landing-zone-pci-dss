@@ -11,13 +11,31 @@ variable "environment" {
 }
 
 variable "origin_hostname" {
-  description = "App Service default hostname to use as private origin"
+  description = "FQDN used for SNI, the origin host header and certificate name validation. Must match the IIS certificate (shared by all regional origins)."
   type        = string
 }
 
-variable "origin_app_service_id" {
-  description = "Resource ID of the App Service used as private origin"
+variable "origin_port" {
+  description = "HTTPS port IIS listens on at the origin"
+  type        = number
+  default     = 8082
+}
+
+variable "health_probe_path" {
+  description = "HTTPS readiness path probed on each origin"
   type        = string
+  default     = "/health"
+}
+
+variable "origins" {
+  description = "Regional private origins. Each is an internal load balancer exposed through a Private Link Service. Lowest priority is preferred; higher priorities receive traffic on failover."
+  type = list(object({
+    name                    = string
+    private_link_service_id = string
+    location                = string
+    priority                = number
+    weight                  = optional(number, 1000)
+  }))
 }
 
 variable "log_analytics_workspace_id" {
@@ -57,15 +75,18 @@ resource "azurerm_cdn_frontdoor_origin_group" "app" {
   }
 
   health_probe {
-    path                = "/health"
+    path                = var.health_probe_path
     protocol            = "Https"
     interval_in_seconds = 30
-    request_type        = "HEAD"
+    request_type        = "GET"
   }
 }
 
+# Private origins cannot be mixed with public origins in the same origin group.
+# Each connection request must be approved on the regional Private Link Service.
 resource "azurerm_cdn_frontdoor_origin" "app" {
-  name                          = "origin-app-${var.environment}"
+  for_each                      = { for o in var.origins : o.name => o }
+  name                          = "origin-app-${each.key}-${var.environment}"
   cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.app.id
   enabled                       = true
 
@@ -73,15 +94,14 @@ resource "azurerm_cdn_frontdoor_origin" "app" {
   host_name                      = var.origin_hostname
   origin_host_header             = var.origin_hostname
   http_port                      = 80
-  https_port                     = 443
-  priority                       = 1
-  weight                         = 1000
+  https_port                     = var.origin_port
+  priority                       = each.value.priority
+  weight                         = each.value.weight
 
   private_link {
-    location               = "northeurope"
-    private_link_target_id = var.origin_app_service_id
+    location               = each.value.location
+    private_link_target_id = each.value.private_link_service_id
     request_message        = "Front Door Private Link"
-    target_type            = "sites"
   }
 }
 
@@ -89,7 +109,7 @@ resource "azurerm_cdn_frontdoor_route" "default" {
   name                          = "route-default"
   cdn_frontdoor_endpoint_id     = azurerm_cdn_frontdoor_endpoint.this.id
   cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.app.id
-  cdn_frontdoor_origin_ids      = [azurerm_cdn_frontdoor_origin.app.id]
+  cdn_frontdoor_origin_ids      = [for o in azurerm_cdn_frontdoor_origin.app : o.id]
 
   supported_protocols    = ["Https"]
   https_redirect_enabled = true

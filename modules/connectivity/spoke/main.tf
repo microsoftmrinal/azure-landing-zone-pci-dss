@@ -37,7 +37,19 @@ variable "use_remote_gateways" {
 }
 
 variable "management_inbound_prefixes" {
-  description = "Source prefixes (e.g. the hub Bastion subnet/VNet) allowed inbound to the compute subnet on SSH/RDP. Empty = deny all inbound."
+  description = "Source prefixes (e.g. the hub Bastion subnet/VNet) allowed inbound to the compute subnet on RDP. Empty = deny all inbound."
+  type        = list(string)
+  default     = []
+}
+
+variable "app_port" {
+  description = "HTTPS port the IIS application listens on in the compute subnet"
+  type        = number
+  default     = 8082
+}
+
+variable "app_inbound_prefixes" {
+  description = "Private client prefixes (e.g. VPN client B ranges) allowed to reach the application port. Empty = only Front Door via Private Link and load balancer probes."
   type        = list(string)
   default     = []
 }
@@ -64,21 +76,14 @@ resource "azurerm_virtual_network" "spoke" {
   tags                = var.common_tags
 }
 
-resource "azurerm_subnet" "app_integration" {
-  name                 = "snet-app-integration"
-  resource_group_name  = azurerm_resource_group.spoke.name
-  virtual_network_name = azurerm_virtual_network.spoke.name
-  address_prefixes     = [cidrsubnet(var.address_space[0], 8, 1)]
-
-  delegation {
-    name = "app-service"
-    service_delegation {
-      name = "Microsoft.Web/serverFarms"
-      actions = [
-        "Microsoft.Network/virtualNetworks/subnets/action"
-      ]
-    }
-  }
+# NAT subnet for the Private Link Service that exposes the IIS load balancer to Front Door.
+# Private link service network policies must be disabled on this subnet.
+resource "azurerm_subnet" "private_link_service" {
+  name                                          = "snet-pls"
+  resource_group_name                           = azurerm_resource_group.spoke.name
+  virtual_network_name                          = azurerm_virtual_network.spoke.name
+  address_prefixes                              = [cidrsubnet(var.address_space[0], 8, 1)]
+  private_link_service_network_policies_enabled = false
 }
 
 resource "azurerm_subnet" "private_endpoints" {
@@ -112,11 +117,6 @@ resource "azurerm_route_table" "spoke" {
   }
 }
 
-resource "azurerm_subnet_route_table_association" "app_integration" {
-  subnet_id      = azurerm_subnet.app_integration.id
-  route_table_id = azurerm_route_table.spoke.id
-}
-
 resource "azurerm_subnet_route_table_association" "private_endpoints" {
   subnet_id      = azurerm_subnet.private_endpoints.id
   route_table_id = azurerm_route_table.spoke.id
@@ -145,7 +145,49 @@ resource "azurerm_network_security_group" "compute" {
   resource_group_name = azurerm_resource_group.spoke.name
   tags                = var.common_tags
 
-  # Allow SSH/RDP inbound only from approved management sources (e.g. hub Bastion).
+  # Front Door Premium reaches IIS through the Private Link Service NAT subnet.
+  security_rule {
+    name                       = "AllowAppFromPrivateLink"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = tostring(var.app_port)
+    source_address_prefixes    = azurerm_subnet.private_link_service.address_prefixes
+    destination_address_prefix = "*"
+  }
+
+  # Private clients (e.g. client B over VPN, inspected by the hub firewall).
+  dynamic "security_rule" {
+    for_each = length(var.app_inbound_prefixes) > 0 ? [1] : []
+    content {
+      name                       = "AllowAppFromPrivateClients"
+      priority                   = 110
+      direction                  = "Inbound"
+      access                     = "Allow"
+      protocol                   = "Tcp"
+      source_port_range          = "*"
+      destination_port_range     = tostring(var.app_port)
+      source_address_prefixes    = var.app_inbound_prefixes
+      destination_address_prefix = "*"
+    }
+  }
+
+  # Internal load balancer health probes.
+  security_rule {
+    name                       = "AllowLoadBalancerProbe"
+    priority                   = 120
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = tostring(var.app_port)
+    source_address_prefix      = "AzureLoadBalancer"
+    destination_address_prefix = "*"
+  }
+
+  # Allow RDP inbound only from approved management sources (e.g. hub Bastion).
   dynamic "security_rule" {
     for_each = length(var.management_inbound_prefixes) > 0 ? [1] : []
     content {
@@ -155,7 +197,7 @@ resource "azurerm_network_security_group" "compute" {
       access                     = "Allow"
       protocol                   = "Tcp"
       source_port_range          = "*"
-      destination_port_ranges    = ["22", "3389"]
+      destination_port_range     = "3389"
       source_address_prefixes    = var.management_inbound_prefixes
       destination_address_prefix = "*"
     }
@@ -177,31 +219,6 @@ resource "azurerm_network_security_group" "compute" {
 resource "azurerm_subnet_network_security_group_association" "compute" {
   subnet_id                 = azurerm_subnet.compute.id
   network_security_group_id = azurerm_network_security_group.compute.id
-}
-
-# NSG for app integration subnet
-resource "azurerm_network_security_group" "app_integration" {
-  name                = "nsg-${var.workload}-app-${var.environment}-${local.region_code}"
-  location            = azurerm_resource_group.spoke.location
-  resource_group_name = azurerm_resource_group.spoke.name
-  tags                = var.common_tags
-
-  security_rule {
-    name                       = "DenyAllInbound"
-    priority                   = 4096
-    direction                  = "Inbound"
-    access                     = "Deny"
-    protocol                   = "*"
-    source_port_range          = "*"
-    destination_port_range     = "*"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
-}
-
-resource "azurerm_subnet_network_security_group_association" "app_integration" {
-  subnet_id                 = azurerm_subnet.app_integration.id
-  network_security_group_id = azurerm_network_security_group.app_integration.id
 }
 
 # NSG for private endpoints subnet
@@ -237,8 +254,12 @@ output "resource_group_name" {
   value = azurerm_resource_group.spoke.name
 }
 
-output "app_integration_subnet_id" {
-  value = azurerm_subnet.app_integration.id
+output "private_link_service_subnet_id" {
+  value = azurerm_subnet.private_link_service.id
+}
+
+output "private_link_service_subnet_prefixes" {
+  value = azurerm_subnet.private_link_service.address_prefixes
 }
 
 output "private_endpoints_subnet_id" {
