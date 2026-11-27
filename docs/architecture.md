@@ -4,15 +4,15 @@
 
 This document describes the Payment24 Cardholder Data Environment (CDE) architecture
 implemented by this repository, incorporating customer requirements supplied on
-27 November 2026. App Service has been removed from the repository; the workload runs
-on Windows IIS VMs. The design is a recommendation and the repository is IaC that
+27 November 2026. The workload runs on Windows IIS VMs. The design is a
+recommendation and the repository is IaC that
 has been validated statically (Terraform `validate`/tests, Bicep build) but not
 deployed to a customer subscription. Neither establishes PCI DSS compliance.
 Validate controls and scope with the customer's QSA.
 
 Customer requirements:
 
-- Windows VMs running IIS in North Europe (NEU) and West Europe (WEU); no App Service.
+- Windows VMs running IIS in North Europe (NEU) and West Europe (WEU).
 - IIS serves HTTPS on TCP 8082 with an FQDN and matching certificate.
 - Some clients connect over the public internet; others use VPN connectivity.
 - Client A requires connections initiated by a custom process on the VM. The

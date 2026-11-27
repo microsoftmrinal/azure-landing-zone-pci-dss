@@ -4,6 +4,35 @@ Azure Landing Zone for a **PCI DSS v4.0 Cardholder Data Environment (CDE)** usin
 
 > The repository is infrastructure as code. It has been validated statically (Terraform `validate` and tests, Bicep build) and has not been deployed to a customer subscription. Deploying it does not by itself establish PCI DSS compliance; validate scope and controls with your QSA.
 
+## Customer Requirements
+
+> [!IMPORTANT]
+> This landing zone is built around the Payment24 requirements below. Items marked **Operational** need a customer decision or a runbook; they are not automated by this repository.
+
+| # | Customer requirement | How it is met | Status |
+|---|----------------------|---------------|--------|
+| 1 | **Virtual machines only**, in **North Europe and West Europe** | One Windows Server 2022 IIS VM per region (Trusted Launch, no public IP) behind an internal load balancer and Private Link Service | Implemented (Terraform + Bicep) |
+| 2 | **IIS on port 8082** with an SSL FQDN | HTTPS on TCP 8082 end to end; Front Door validates the certificate name against the application FQDN | Implemented; certificate and IIS binding are **Operational** |
+| 3 | **Public internet clients** | Front Door Premium + WAF is the only public web entry; reaches the VMs over Private Link. Traffic does not pass through the firewall | Implemented |
+| 4 | **VPN clients, inbound (Client B)** | VPN Gateway → Firewall Premium → IIS on 8082 only, from approved Client B prefixes | Implemented |
+| 5 | **Outbound to Client A** from a custom app on the VM | Scoped firewall egress rule to the Client A server; reserved `pip-clientA-nat-egress` can be attached to the firewall. Client A must allow-list **all** firewall egress IPs | Implemented; fixed single source IP needs a NAT Gateway design (**Operational**) |
+| 6 | **App connects to Managed HSM** | Private endpoint, private DNS, managed identity with HSM RBAC; no internet path | Implemented |
+| 7 | **If NEU public origin fails, use WEU** | Front Door health-probed origins: NEU priority 1, WEU priority 2 | Implemented (new requests; in-flight requests are not moved) |
+| 8 | **If NEU VPN fails, clients use WEU VPN** | A VPN gateway, firewall and spoke in each region; tunnels to both must be configured with the partner | Gateways implemented; routing/BGP choice is **Operational** |
+| 9 | **If NEU VM fails, do clients move to WEU?** | Public clients: yes, via Front Door. VPN clients: no, not automatically. Use a private DNS name repointed to the WEU load balancer | **Operational** (see [docs/architecture.md](docs/architecture.md)) |
+| 10 | **App must start work in WEU if NEU is down** | Application installed in both regions; only one region may process at a time (lease with fencing, idempotent payments) | **Operational** (application design) |
+
+Questions answered in detail: when the firewall needs another public IP, why Front Door does not go through the firewall, and which failover mechanism applies to which failure are in [docs/architecture.md](docs/architecture.md).
+
+### Ready-to-use script for the customer
+
+[`scripts/Deploy-LandingZone.ps1`](scripts/Deploy-LandingZone.ps1) is a PowerShell script that checks prerequisites, validates, plans and applies the deployment, approves the Front Door private endpoint connections, lists the egress IPs Client A must allow-list, and tests the public endpoint.
+
+```powershell
+Get-Help .\scripts\Deploy-LandingZone.ps1 -Full
+.\scripts\Deploy-LandingZone.ps1 -Action Check
+```
+
 ### Interactive Visualizations
 
 | Diagram | View |
@@ -178,11 +207,12 @@ graph LR
 
     L1 --> L2 --> L3 --> L4 --> L5
 
-    style L1 fill:#fef2f2,stroke:#ef4444,stroke-width:2px
-    style L2 fill:#fff7ed,stroke:#f59e0b,stroke-width:2px
-    style L3 fill:#faf5ff,stroke:#a78bfa,stroke-width:2px
-    style L4 fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
-    style L5 fill:#eff6ff,stroke:#3b82f6,stroke-width:2px
+    style L1 fill:#fef2f2,stroke:#ef4444,stroke-width:2px,color:#000000
+    style L2 fill:#fff7ed,stroke:#f59e0b,stroke-width:2px,color:#000000
+    style L3 fill:#faf5ff,stroke:#a78bfa,stroke-width:2px,color:#000000
+    style L4 fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,color:#000000
+    style L5 fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#000000
+    classDef default fill:#ffffff,stroke:#6b7280,color:#000000
 ```
 
 ## Disaster Recovery
@@ -212,8 +242,9 @@ graph LR
     P_APP -.->|"Fenced lease promotion"| D_APP
     P_HSM -.->|"Key recovery design to validate"| D_HSM
 
-    style Primary fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
-    style DR fill:#fff7ed,stroke:#f59e0b,stroke-width:2px
+    style Primary fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,color:#000000
+    style DR fill:#fff7ed,stroke:#f59e0b,stroke-width:2px,color:#000000
+    classDef default fill:#ffffff,stroke:#6b7280,color:#000000
 ```
 
 ## Design Principles

@@ -54,7 +54,8 @@ app_port = 8082
 # Reserved IP added to the firewall. Client A must allow-list ALL firewall egress IPs (see outputs).
 # client_a_egress_public_ip_id  = "/subscriptions/<id>/resourceGroups/<rg>/providers/Microsoft.Network/publicIPAddresses/pip-clientA-nat-egress"
 
-vm_admin_password = "<retrieve from Key Vault in the pipeline>"
+# vm_admin_password is supplied securely at deploy time (scripts/Deploy-LandingZone.ps1 prompts for it
+# and passes it as TF_VAR_vm_admin_password). Do not set it in this file: a value here overrides the prompt.
 
 common_tags = {
   Environment        = "Production"

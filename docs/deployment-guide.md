@@ -23,6 +23,24 @@
 
 ## Deployment Order
 
+### Guided deployment with the PowerShell script
+
+[`scripts/Deploy-LandingZone.ps1`](../scripts/Deploy-LandingZone.ps1) wraps the steps below. It checks prerequisites, validates, plans and applies, approves the Front Door private endpoint connections, lists the firewall egress IPs Client A must allow-list, and tests the public endpoint. Secrets (the VM administrator password and optional VPN key) are requested securely and passed to Terraform through process environment variables only.
+
+```powershell
+az login
+.\scripts\Deploy-LandingZone.ps1 -Action Check
+.\scripts\Deploy-LandingZone.ps1 -Action Plan  -Environment prod
+.\scripts\Deploy-LandingZone.ps1 -Action Apply -Environment prod
+.\scripts\Deploy-LandingZone.ps1 -Action Plan  -Environment dr
+.\scripts\Deploy-LandingZone.ps1 -Action Apply -Environment dr
+.\scripts\Deploy-LandingZone.ps1 -Action ApproveFrontDoor
+.\scripts\Deploy-LandingZone.ps1 -Action ShowClientIPs
+.\scripts\Deploy-LandingZone.ps1 -Action Test
+```
+
+Use `-WhatIf` to preview Apply and ApproveFrontDoor, and `Get-Help .\scripts\Deploy-LandingZone.ps1 -Full` for all options. The phase-by-phase commands follow for teams that prefer to run Terraform directly.
+
 ### Phase 0: Foundation & Governance
 
 ```bash
