@@ -97,10 +97,18 @@ graph TD
     LZ --> CDE["CDE-Prod 🔴<br/><i>PCI DSS v4 assigned</i>"]
     LZ --> Corp[Corp<br/><i>Non-CDE workloads</i>]
 
-    style CDE fill:#fee2e2,stroke:#ef4444,stroke-width:3px
-    style Root fill:#dbeafe,stroke:#3b82f6,stroke-width:2px
-    style Platform fill:#e0e7ff,stroke:#6366f1
-    style LZ fill:#dcfce7,stroke:#22c55e
+    classDef default fill:#ffffff,stroke:#6b7280,color:#000000
+    style TRG fill:#f3f4f6,stroke:#6b7280,color:#000000
+    style CDE fill:#fee2e2,stroke:#ef4444,stroke-width:3px,color:#000000
+    style Root fill:#dbeafe,stroke:#3b82f6,stroke-width:2px,color:#000000
+    style Platform fill:#e0e7ff,stroke:#6366f1,color:#000000
+    style LZ fill:#dcfce7,stroke:#22c55e,color:#000000
+    style Sandbox fill:#ffffff,stroke:#6b7280,color:#000000
+    style Decom fill:#ffffff,stroke:#6b7280,color:#000000
+    style Conn fill:#ffffff,stroke:#6366f1,color:#000000
+    style Mgmt fill:#ffffff,stroke:#6366f1,color:#000000
+    style Ident fill:#ffffff,stroke:#6366f1,color:#000000
+    style Corp fill:#ffffff,stroke:#22c55e,color:#000000
 ```
 
 ## Traffic Flow
