@@ -400,7 +400,7 @@ run "validate_waf_in_prevention_mode" {
     resource_group_name = "rg-test"
     org_prefix          = "test"
     environment         = "test"
-    origin_hostname     = "app.payment24.example"
+    origin_hostname     = "app.example.com"
     origins = [
       {
         name                    = "neu"

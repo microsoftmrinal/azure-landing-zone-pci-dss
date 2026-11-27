@@ -6,6 +6,12 @@ variable "common_tags" {
   type = map(string)
 }
 
+variable "security_contact_email" {
+  description = "Security contact for Defender for Cloud alert notifications"
+  type        = string
+  default     = "security@example.com"
+}
+
 # Enable all Defender for Cloud plans
 resource "azurerm_security_center_subscription_pricing" "servers" {
   tier          = "Standard"
@@ -61,7 +67,7 @@ resource "azurerm_security_center_auto_provisioning" "this" {
 
 # Security contacts for PCI alerting
 resource "azurerm_security_center_contact" "this" {
-  email               = "security@payment24.com"
+  email               = var.security_contact_email
   phone               = "+31000000000"
   alert_notifications = true
   alerts_to_admins    = true

@@ -42,6 +42,7 @@ module "defender" {
 
   log_analytics_workspace_id = module.sentinel.workspace_id
   common_tags                = var.common_tags
+  security_contact_email     = var.security_contact_email
 }
 
 # --- Phase 1: Connectivity & Security ---

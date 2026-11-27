@@ -2,21 +2,21 @@
 
 ## Scope and Deployment Status
 
-This document describes the Payment24 Cardholder Data Environment (CDE) architecture
-implemented by this repository, incorporating customer requirements supplied on
-27 November 2026. The workload runs on Windows IIS VMs. The design is a
+This document describes the Cardholder Data Environment (CDE) architecture
+implemented by this repository for a Windows IIS workload with the requirements
+below. The workload runs on Windows IIS VMs. The design is a
 recommendation and the repository is IaC that
 has been validated statically (Terraform `validate`/tests, Bicep build) but not
-deployed to a customer subscription. Neither establishes PCI DSS compliance.
-Validate controls and scope with the customer's QSA.
+deployed to an Azure subscription. Neither establishes PCI DSS compliance.
+Validate controls and scope with your QSA.
 
-Customer requirements:
+Requirements:
 
 - Windows VMs running IIS in North Europe (NEU) and West Europe (WEU).
 - IIS serves HTTPS on TCP 8082 with an FQDN and matching certificate.
 - Some clients connect over the public internet; others use VPN connectivity.
-- Client A requires connections initiated by a custom process on the VM. The
-     customer has reserved `pip-clientA-nat-egress` for outbound connectivity.
+- Client A requires connections initiated by a custom process on the VM. A
+  reserved public IP, `pip-clientA-nat-egress`, is available for outbound connectivity.
 - Client B initiates inbound connections over VPN.
 - The application also connects to Managed HSM.
 - Both regions need a working application and a tested recovery process.
@@ -31,7 +31,7 @@ server), and can attach the reserved `pip-clientA-nat-egress` as an additional
 firewall public IP. VPN traffic is steered through the firewall with a GatewaySubnet
 route table.
 
-Not implemented in code (operational or customer decisions): NAT Gateway on
+Not implemented in code (operational or owner decisions): NAT Gateway on
 `AzureFirewallSubnet` (see the Client A section), private DNS failover automation,
 worker lease/fencing, state and HSM recovery between regions, certificates and the
 IIS site binding on 8082, and the Front Door private endpoint approvals.
@@ -85,7 +85,7 @@ requires Premium for IDPS and TLS inspection before go-live.
 
 ```text
 Tenant Root Group
-└── P24-Root (Intermediate Root)
+└── ORG-Root (Intermediate Root)
     ├── Platform
     │   ├── Connectivity
     │   ├── Management
@@ -108,7 +108,7 @@ Tenant Root Group
 | CDE spoke primary | 10.10.0.0/16 | North Europe |
 | CDE spoke recovery | 10.20.0.0/16 | West Europe |
 
-Confirm these ranges do not overlap customer or partner networks before deploying.
+Confirm these ranges do not overlap connected partner or on-premises networks before deploying.
 
 ### Public Internet to IIS
 
@@ -122,8 +122,8 @@ Public client: HTTPS 443 to public application FQDN
 ```
 
 This is Microsoft's supported private-origin pattern for VM-hosted web workloads.
-Front Door creates the private endpoint in its managed network; the customer
-approves its connection to each regional PLS. It is **not a private endpoint on
+Front Door creates the private endpoint in its managed network; an authorized
+operator approves its connection to each regional PLS. It is **not a private endpoint on
 Azure Firewall**. The baseline path above does not traverse Azure Firewall.
 
 For this path, no inbound public firewall DNAT rule or extra firewall public IP is
@@ -276,7 +276,7 @@ Both are inputs to a QSA assessment, not an attestation.
 | Failure | Detection and recovery | Important limit |
 |---------|------------------------|-----------------|
 | NEU public IIS/origin unavailable | Front Door HTTPS readiness probes select healthy WEU priority-2 origin | New requests fail over; existing connections and in-flight payments are not migrated |
-| NEU VPN unavailable | Preconfigured client tunnels to both regional VPN gateways; BGP preference/withdrawal or tested static-route automation | Requires customer VPN device support, correct prefixes, and WEU application reachability |
+| NEU VPN unavailable | Preconfigured client tunnels to both regional VPN gateways; BGP preference/withdrawal or tested static-route automation | Requires partner VPN device support, correct prefixes, and WEU application reachability |
 | NEU VM unavailable while NEU VPN remains healthy | Private service discovery or health-driven private DNS switches Client B to the WEU private service FQDN | VPN/BGP does not detect IIS failure; clients must re-resolve and reconnect |
 | NEU background process unavailable | Application supervisor plus coordinated, fenced worker ownership promotes WEU | Front Door cannot start a background process or choose its owner |
 | NEU state or HSM dependency unavailable | Restore/promote a tested state/key recovery topology before declaring WEU ready | Traffic failover alone cannot recover application data or keys |
@@ -356,7 +356,7 @@ automatic end-to-end failover guarantee is made by this design.
 
 ## Well-Architected Framework Alignment
 
-| Pillar | Customer-specific design and verification |
+| Pillar | Design and verification |
 |--------|-------------------------------------------|
 | Reliability | Define SLO/RTO/RPO; warm regional standby; optional zone-spread VMs; dependency-aware probes; dual-region VPNs; fenced processing; tested failover and failback |
 | Security | Front Door WAF Prevention; private VM origins; least-privilege VPN/egress rules; VM patching/Defender; managed identity; HSM RBAC; segmentation and validated PCI DSS scope |
@@ -413,7 +413,7 @@ Acceptance tests:
 
 - [Azure Well-Architected Framework](https://learn.microsoft.com/en-us/azure/well-architected/)
 - [Well-Architected guidance for Azure Front Door](https://learn.microsoft.com/en-us/azure/well-architected/service-guides/azure-front-door)
-- [Architecture Center: multi-region N-tier application](https://learn.microsoft.com/en-us/azure/architecture/reference-architectures/n-tier/multi-region-sql-server) (use the regional reliability principles, not an assumption that this customer uses SQL Server)
+- [Architecture Center: multi-region N-tier application](https://learn.microsoft.com/en-us/azure/architecture/reference-architectures/n-tier/multi-region-sql-server) (use the regional reliability principles, not an assumption that the workload uses SQL Server)
 - [Front Door Premium to an internal load balancer over Private Link](https://learn.microsoft.com/en-us/azure/frontdoor/standard-premium/how-to-enable-private-link-internal-load-balancer)
 - [Secure Front Door origins](https://learn.microsoft.com/en-us/azure/frontdoor/origin-security)
 - [Firewall integration with NAT Gateway](https://learn.microsoft.com/en-us/azure/firewall/integrate-with-nat-gateway)

@@ -1,4 +1,4 @@
-# Payment24 CDE: West Europe (warm standby) stack. Copy to terraform.tfvars and fill in.
+# CDE: West Europe (warm standby) stack. Copy to terraform.tfvars and fill in.
 # DO NOT commit real values to version control.
 connectivity_subscription_id = "00000000-0000-0000-0000-000000000000"
 cde_subscription_id          = "00000000-0000-0000-0000-000000000000"

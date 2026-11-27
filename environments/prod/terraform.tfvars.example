@@ -6,7 +6,7 @@ cde_subscription_id          = "00000000-0000-0000-0000-000000000000"
 primary_location = "northeurope"
 dr_location      = "westeurope"
 environment      = "prod"
-org_prefix       = "p24"
+org_prefix       = "org"
 
 hub_address_space_primary       = ["10.1.0.0/16"]
 hub_address_space_dr            = ["10.2.0.0/16"]
@@ -40,10 +40,10 @@ vpn_gateway_sku = "VpnGw2AZ"
 # --- IIS application (VM behind internal LB + Private Link Service) ---
 app_port = 8082
 # FQDN on the IIS certificate (must cover both regions); required when deploy_front_door = true.
-# app_origin_hostname = "app.payment24.com"
-# custom_domain_name  = "app.payment24.com"
+# app_origin_hostname = "app.example.com"
+# custom_domain_name  = "app.example.com"
 # West Europe Private Link Service ID from the environments/dr outputs (adds the priority-2 origin).
-# dr_private_link_service_id = "/subscriptions/<id>/resourceGroups/rg-cde-dr-weu/providers/Microsoft.Network/privateLinkServices/pls-p24-cde-dr-weu"
+# dr_private_link_service_id = "/subscriptions/<id>/resourceGroups/rg-cde-dr-weu/providers/Microsoft.Network/privateLinkServices/pls-org-cde-dr-weu"
 
 # --- Client B: inbound over VPN (firewall + NSG allow TCP app_port from these prefixes) ---
 # client_b_inbound_prefixes = ["192.168.10.0/24"]
@@ -57,10 +57,13 @@ app_port = 8082
 # vm_admin_password is supplied securely at deploy time (scripts/Deploy-LandingZone.ps1 prompts for it
 # and passes it as TF_VAR_vm_admin_password). Do not set it in this file: a value here overrides the prompt.
 
+# Security contact for Defender for Cloud alerts.
+security_contact_email = "security@example.com"
+
 common_tags = {
   Environment        = "Production"
   PCIScope           = "CDE"
   DataClassification = "CardholderData"
   ManagedBy          = "Terraform"
-  Workload           = "Payment24-CDE"
+  Workload           = "CDE-Workload"
 }
