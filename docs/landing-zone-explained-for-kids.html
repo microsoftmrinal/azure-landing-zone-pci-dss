@@ -309,7 +309,7 @@ body {
       <div class="layer">🌐 EDGE — The Drawbridge (Front Door + WAF)</div>
       <div class="layer">🔥 NETWORK — The Firewall Moat</div>
       <div class="layer">🪪 IDENTITY — "Show me your badge!"</div>
-      <div class="layer">📱 APPLICATION — The App's own armor</div>
+      <div class="layer">�️ APPLICATION — The IIS server's own armor</div>
       <div class="layer">💎 DATA — The locked treasure chest</div>
     </div>
     <p style="margin-top:20px; font-size:1.2em;">A bad guy would have to break through ALL FIVE layers to steal anything. That's basically impossible! 💪</p>
@@ -346,7 +346,7 @@ body {
       <span class="flow-arrow">→</span>
       <div class="flow-node"><span>🔥</span><span>Firewall</span></div>
       <span class="flow-arrow">→</span>
-      <div class="flow-node"><span>🏰</span><span>Our Apps</span></div>
+      <div class="flow-node"><span>🏰</span><span>Our IIS Servers</span></div>
     </div>
     <h2>The Fire Moat!</h2>
     <p>The <strong>Azure Firewall Premium</strong> is like a moat of fire around our castle. It inspects EVERY message that comes in or goes out.</p>
@@ -381,7 +381,7 @@ body {
     <h2>You Can't Attack What You Can't See!</h2>
     <p>Our castle is basically <strong>invisible</strong> on the internet! 👀</p>
     <p style="margin-top:15px;">All our computers, databases, and secret vaults have <strong>NO public address</strong>. It's like having a house with no street number — mailmen (hackers) can't find it!</p>
-    <p style="margin-top:15px;">The ONLY thing visible is our front door guard (Front Door). Everything else is hidden behind <strong>"Private Endpoints"</strong> — secret tunnels only our own people know about! 🕳️</p>
+    <p style="margin-top:15px;">Website visitors can only use our front door guard (Front Door). Our partners come in through their own private <strong>VPN tunnel</strong>. Everything else is hidden behind <strong>"Private Endpoints"</strong> and a <strong>"Private Link Service"</strong> — secret tunnels only our own people know about! 🕳️</p>
   </div>
 </div>
 
@@ -417,7 +417,7 @@ body {
       <li>🏰 Castle 1: <strong>North Europe</strong> (main castle)</li>
       <li>🏰 Castle 2: <strong>West Europe</strong> (backup castle)</li>
     </ul>
-    <p style="margin-top:15px;">If Castle 1 goes down, Castle 2 takes over <strong>automatically</strong> in seconds! The treasure (data) is always copied to both castles, so nothing is ever lost! 🎉</p>
+    <p style="margin-top:15px;">If Castle 1's server stops answering, the front door guard sends <strong>new visitors</strong> to Castle 2. Other things (the partner VPN tunnels, the job the app is doing, and the secret keys) each have their own switch-over steps, and we practise them so we know how long they really take. 🎉</p>
   </div>
 </div>
 

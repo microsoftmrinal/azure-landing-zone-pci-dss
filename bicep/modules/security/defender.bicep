@@ -18,11 +18,6 @@ resource defenderServers 'Microsoft.Security/pricings@2024-01-01' = {
   properties: { pricingTier: 'Standard' }
 }
 
-resource defenderAppServices 'Microsoft.Security/pricings@2024-01-01' = {
-  name: 'AppServices'
-  properties: { pricingTier: 'Standard' }
-}
-
 resource defenderSql 'Microsoft.Security/pricings@2024-01-01' = {
   name: 'SqlServers'
   properties: { pricingTier: 'Standard' }

@@ -19,7 +19,7 @@ output "sql_server_fqdn" {
 }
 
 output "front_door_endpoint" {
-  description = "Front Door endpoint hostname. Null until the application platform is deployed."
+  description = "Front Door endpoint hostname. Null until Front Door is deployed."
   value       = try(module.front_door[0].endpoint_hostname, null)
 }
 
@@ -38,7 +38,22 @@ output "vpn_gateway_id" {
   value       = module.hub_primary.vpn_gateway_id
 }
 
-output "client_vm_id" {
-  description = "Resource ID of the CDE client VM. Null when deploy_compute_vm = false."
+output "iis_vm_id" {
+  description = "Resource ID of the North Europe IIS VM. Null when deploy_compute_vm = false."
   value       = try(module.compute_cde[0].vm_id, null)
+}
+
+output "private_link_service_id" {
+  description = "North Europe Private Link Service (Front Door priority-1 origin). Approve the Front Door connection here."
+  value       = try(module.compute_cde[0].private_link_service_id, null)
+}
+
+output "app_load_balancer_private_ip" {
+  description = "Private IP of the North Europe internal load balancer (VPN clients / private DNS target)."
+  value       = try(module.compute_cde[0].load_balancer_frontend_ip_address, null)
+}
+
+output "firewall_public_ip" {
+  description = "Primary firewall egress public IP. Client A must allow-list this and any additional firewall public IP."
+  value       = module.firewall_primary.public_ip_address
 }

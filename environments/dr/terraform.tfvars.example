@@ -1,0 +1,32 @@
+# Payment24 CDE: West Europe (warm standby) stack. Copy to terraform.tfvars and fill in.
+# DO NOT commit real values to version control.
+connectivity_subscription_id = "00000000-0000-0000-0000-000000000000"
+cde_subscription_id          = "00000000-0000-0000-0000-000000000000"
+
+# Central Log Analytics workspace (created by the production stack).
+log_analytics_workspace_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-mgmt-prod-neu/providers/Microsoft.OperationalInsights/workspaces/<workspace-name>"
+
+# privatelink.vaultcore.azure.net zone ID (output of the production DNS module).
+keyvault_dns_zone_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-conn-prod-neu/providers/Microsoft.Network/privateDnsZones/privatelink.vaultcore.azure.net"
+
+hsm_admin_object_ids = ["00000000-0000-0000-0000-000000000000"]
+
+deploy_vpn_gateway  = true
+deploy_key_platform = true
+deploy_compute_vm   = true
+
+app_port = 8082
+
+# Client B: inbound over VPN. Client A: connections initiated by the custom app on the VM.
+# client_b_inbound_prefixes     = ["192.168.10.0/24"]
+# client_a_destination_prefixes = ["203.0.113.20/32"]
+# client_a_destination_ports    = ["443"]
+# Separate West Europe reserved public IP for Client A (Client A must allow-list it in advance).
+# client_a_egress_public_ip_id  = "/subscriptions/<id>/resourceGroups/<rg>/providers/Microsoft.Network/publicIPAddresses/pip-clientA-nat-egress-weu"
+
+# Remote VPN device for the West Europe tunnel (leave unset for a gateway-only deploy).
+# on_prem_gateway_ip     = "203.0.113.10"
+# on_prem_address_spaces = ["192.168.0.0/24"]
+
+# vm_admin_password is supplied securely at deploy time (scripts/Deploy-LandingZone.ps1 prompts for it).
+# vpn_shared_key is supplied the same way (TF_VAR_vpn_shared_key); do not put either in this file.

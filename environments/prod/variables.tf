@@ -66,8 +66,8 @@ variable "spoke_cde_address_space_dr" {
 }
 
 # --- Feature flags (phased rollout) ---
-# Phase 1 minimum = governance + connectivity (hub/VPN GW/firewall/spoke) + key platform + client VM.
-# Flip these to true and re-run `terraform apply` to layer in data and app platforms later.
+# Phase 1 minimum = governance + connectivity (hub/VPN GW/firewall/spoke) + key platform + IIS VM.
+# Flip these to true and re-run `terraform apply` to layer in Front Door and data platform later.
 variable "deploy_vpn_gateway" {
   description = "Deploy the hub VPN Gateway and enable spoke gateway transit (hub/spoke S2S)."
   type        = bool
@@ -75,13 +75,13 @@ variable "deploy_vpn_gateway" {
 }
 
 variable "deploy_key_platform" {
-  description = "Deploy the Managed HSM / Key Vault / Disk Encryption Set. Required by the client VM (CMK disk encryption)."
+  description = "Deploy the Managed HSM / Key Vault / Disk Encryption Set. Required by the IIS VM (CMK disk encryption)."
   type        = bool
   default     = true
 }
 
 variable "deploy_compute_vm" {
-  description = "Deploy the client VM into the CDE spoke compute subnet."
+  description = "Deploy the Windows IIS VM, internal load balancer and Private Link Service into the CDE spoke."
   type        = bool
   default     = true
 }
@@ -92,8 +92,8 @@ variable "deploy_data_platform" {
   default     = false
 }
 
-variable "deploy_application_platform" {
-  description = "Deploy App Service + Front Door Premium/WAF. Off for the phase-1 minimum (Front Door has no origin without App Service)."
+variable "deploy_front_door" {
+  description = "Deploy Front Door Premium + WAF with private IIS origins. Requires deploy_compute_vm = true. Off for the phase-1 minimum (Front Door has no origin until the IIS VM and its Private Link Service exist)."
   type        = bool
   default     = false
 }
@@ -174,9 +174,54 @@ variable "custom_domain_name" {
   default     = null
 }
 
+variable "app_origin_hostname" {
+  description = "FQDN on the IIS certificate (SAN covers both regions). Used for Front Door SNI, origin host header and certificate name validation. Required when deploy_front_door = true."
+  type        = string
+  default     = null
+}
+
+variable "dr_private_link_service_id" {
+  description = "Resource ID of the West Europe Private Link Service (output of environments/dr). Adds the priority-2 Front Door origin when set."
+  type        = string
+  default     = null
+}
+
+# --- Application (IIS) ---
+variable "app_port" {
+  description = "HTTPS port IIS listens on"
+  type        = number
+  default     = 8082
+}
+
+# --- Client B: inbound over VPN ---
+variable "client_b_inbound_prefixes" {
+  description = "Client B source prefixes allowed to reach IIS on app_port over the VPN (via the firewall). Empty = no rule."
+  type        = list(string)
+  default     = []
+}
+
+# --- Client A: outbound from the VM ---
+variable "client_a_destination_prefixes" {
+  description = "Client A server prefixes the custom app on the VM connects out to. Empty = no rule."
+  type        = list(string)
+  default     = []
+}
+
+variable "client_a_destination_ports" {
+  description = "TCP ports of the Client A server"
+  type        = list(string)
+  default     = []
+}
+
+variable "client_a_egress_public_ip_id" {
+  description = "Optional resource ID of the reserved pip-clientA-nat-egress. Added to the firewall as an additional public IP; Client A must allow-list every firewall egress IP."
+  type        = string
+  default     = null
+}
+
 # --- Compute ---
-variable "admin_ssh_public_key" {
-  description = "SSH public key for VM admin user (retrieve from Key Vault in pipeline). Required when deploy_compute_vm = true."
+variable "vm_admin_password" {
+  description = "Local administrator password for the IIS VM (retrieve from Key Vault in pipeline). Required when deploy_compute_vm = true."
   type        = string
   sensitive   = true
   default     = null

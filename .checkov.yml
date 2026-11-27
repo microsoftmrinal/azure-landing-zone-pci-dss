@@ -1,7 +1,7 @@
-soft_fail: false
+soft-fail: false
 framework:
   - terraform
-skip_check:
+skip-check:
   # CKV_AZURE_50: VM Extensions - we use Defender auto-provisioning which
   # installs the MDE agent; this is required for PCI DSS Req 5 (anti-malware)
   - CKV_AZURE_50
@@ -10,12 +10,9 @@ skip_check:
   # database, not a blockchain audit scenario. Immutable audit is handled by WORM storage.
   - CKV_AZURE_224
 
-  # CKV_AZURE_88: Azure Files for App Service - not applicable; app uses
-  # VNet-integrated deployment with SCM build, not mounted file shares.
-  - CKV_AZURE_88
-
   # CKV2_AZURE_31: NSG on subnets - skip for Azure-managed subnets only:
   # AzureFirewallManagementSubnet, AzureBastionSubnet, dns-resolver (delegated)
+  # and snet-pls (Private Link Service NAT subnet; network policies must be disabled).
   # These subnets do not support user-assigned NSGs per Azure platform constraints.
-  # All workload subnets (app, PE, compute) DO have NSGs assigned.
+  # All other workload subnets (PE, compute) DO have NSGs assigned.
   - CKV2_AZURE_31

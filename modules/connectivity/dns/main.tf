@@ -15,7 +15,6 @@ locals {
     "privatelink.database.windows.net",
     "privatelink.blob.core.windows.net",
     "privatelink.vaultcore.azure.net",
-    "privatelink.azurewebsites.net",
     "privatelink.managedhsm.azure.net",
     "privatelink.file.core.windows.net",
     "privatelink.queue.core.windows.net",
@@ -50,10 +49,6 @@ output "blob_dns_zone_id" {
 
 output "keyvault_dns_zone_id" {
   value = azurerm_private_dns_zone.zones["privatelink.vaultcore.azure.net"].id
-}
-
-output "appservice_dns_zone_id" {
-  value = azurerm_private_dns_zone.zones["privatelink.azurewebsites.net"].id
 }
 
 output "hsm_dns_zone_id" {

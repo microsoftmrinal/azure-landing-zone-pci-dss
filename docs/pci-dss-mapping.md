@@ -8,8 +8,8 @@ This document maps every PCI DSS v4.0 requirement to the specific Azure control 
 |----------------|---------------|----------|
 | 1.2.1 - Network segmentation | Hub-spoke topology with forced firewall routing | `modules/connectivity/hub`, `modules/connectivity/spoke` |
 | 1.2.5 - All services/ports allowed are identified | Azure Firewall Premium rule collections (explicit allow) | `modules/connectivity/firewall` |
-| 1.3.1 - Inbound traffic restricted | Front Door WAF + no public IPs in CDE | `modules/connectivity/front-door`, Azure Policy deny |
-| 1.3.2 - Outbound traffic restricted | UDR 0.0.0.0/0 → Firewall; IDPS in Deny mode | `modules/connectivity/firewall` |
+| 1.3.1 - Inbound traffic restricted | Front Door WAF to private IIS origins; no public IPs on VMs (Azure Policy deny); NSG allows TCP 8082 only from the Private Link Service subnet and approved VPN prefixes | `modules/connectivity/front-door`, `modules/connectivity/spoke`, Azure Policy deny |
+| 1.3.2 - Outbound traffic restricted | UDR 0.0.0.0/0 → Firewall; IDPS in Deny mode; scoped Client A egress rule | `modules/connectivity/firewall` |
 | 1.4.1 - NSGs between trusted/untrusted | NSG on every spoke subnet (default deny inbound) | `modules/connectivity/spoke` |
 
 ## Requirement 2: Apply Secure Configurations
@@ -17,7 +17,7 @@ This document maps every PCI DSS v4.0 requirement to the specific Azure control 
 | Sub-Requirement | Azure Control | Resource |
 |----------------|---------------|----------|
 | 2.2.1 - System configuration standards | Azure Policy (TLS 1.2, encryption, allowed SKUs) | `modules/policy` |
-| 2.2.7 - Non-console admin encrypted | Azure Bastion (encrypted RDP/SSH over HTTPS) | `modules/connectivity/hub` |
+| 2.2.7 - Non-console admin encrypted | Azure Bastion (RDP over TLS); no SSH or direct RDP from the internet | `modules/connectivity/hub`, `modules/connectivity/spoke` |
 | 2.3.1 - Wireless not applicable | Cloud-native; no wireless in scope | N/A |
 
 ## Requirement 3: Protect Stored Account Data
@@ -33,7 +33,7 @@ This document maps every PCI DSS v4.0 requirement to the specific Azure control 
 
 | Sub-Requirement | Azure Control | Resource |
 |----------------|---------------|----------|
-| 4.2.1 - Strong cryptography in transit | TLS 1.2 minimum everywhere; HTTPS-only App Service | `modules/application-platform/app-service` |
+| 4.2.1 - Strong cryptography in transit | TLS 1.2 minimum; HTTPS to IIS on 8082 with certificate name validation from Front Door; WAF in front | `modules/application-platform/compute`, `modules/connectivity/front-door` |
 | 4.2.1.1 - Certificate management | Front Door managed certificates; Key Vault for internal | `modules/connectivity/front-door` |
 
 ## Requirement 5: Protect Against Malicious Software
@@ -91,7 +91,7 @@ This document maps every PCI DSS v4.0 requirement to the specific Azure control 
 | 11.3.1 - Internal vulnerability scans | Defender for Cloud continuous assessment | `modules/security/defender` |
 | 11.4.1 - Penetration testing | Manual (authorised); Defender recommendations as input | Process |
 | 11.5.1 - Network intrusion detection | Azure Firewall Premium IDPS in Deny mode | `modules/connectivity/firewall` |
-| 11.6.1 - Change detection on payment pages | Front Door WAF + App Service deployment slots | `modules/connectivity/front-door` |
+| 11.6.1 - Change detection on payment pages | Front Door WAF; page change/tamper detection is an application-level control to be implemented and evidenced (not provided by this repository) | `modules/connectivity/front-door` |
 
 ## Requirement 12: Support Information Security with Policies
 

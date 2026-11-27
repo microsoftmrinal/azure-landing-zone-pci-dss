@@ -1,6 +1,37 @@
 # Azure Landing Zone for PCI-DSS v4.0
 
-Production-ready Azure Landing Zone implementing a **PCI DSS v4.0 compliant Cardholder Data Environment (CDE)** using hub-spoke topology with defence-in-depth controls.
+Azure Landing Zone for a **PCI DSS v4.0 Cardholder Data Environment (CDE)** using hub-spoke topology with defence-in-depth controls. The workload runs on **Windows IIS VMs in North Europe and West Europe** (HTTPS on TCP 8082), published through Front Door Premium + WAF over Private Link, with VPN connectivity for partner clients.
+
+> The repository is infrastructure as code. It has been validated statically (Terraform `validate` and tests, Bicep build) and has not been deployed to a customer subscription. Deploying it does not by itself establish PCI DSS compliance; validate scope and controls with your QSA.
+
+## Customer Requirements
+
+> [!IMPORTANT]
+> This landing zone is built around the Payment24 requirements below. Items marked **Operational** need a customer decision or a runbook; they are not automated by this repository.
+
+| # | Customer requirement | How it is met | Status |
+|---|----------------------|---------------|--------|
+| 1 | **Virtual machines only**, in **North Europe and West Europe** | One Windows Server 2022 IIS VM per region (Trusted Launch, no public IP) behind an internal load balancer and Private Link Service | Implemented (Terraform + Bicep) |
+| 2 | **IIS on port 8082** with an SSL FQDN | HTTPS on TCP 8082 end to end; Front Door validates the certificate name against the application FQDN | Implemented; certificate and IIS binding are **Operational** |
+| 3 | **Public internet clients** | Front Door Premium + WAF is the only public web entry; reaches the VMs over Private Link. Traffic does not pass through the firewall | Implemented |
+| 4 | **VPN clients, inbound (Client B)** | VPN Gateway → Firewall Premium → IIS on 8082 only, from approved Client B prefixes | Implemented |
+| 5 | **Outbound to Client A** from a custom app on the VM | Scoped firewall egress rule to the Client A server; reserved `pip-clientA-nat-egress` can be attached to the firewall. Client A must allow-list **all** firewall egress IPs | Implemented; fixed single source IP needs a NAT Gateway design (**Operational**) |
+| 6 | **App connects to Managed HSM** | Private endpoint, private DNS, managed identity with HSM RBAC; no internet path | Implemented |
+| 7 | **If NEU public origin fails, use WEU** | Front Door health-probed origins: NEU priority 1, WEU priority 2 | Implemented (new requests; in-flight requests are not moved) |
+| 8 | **If NEU VPN fails, clients use WEU VPN** | A VPN gateway, firewall and spoke in each region; tunnels to both must be configured with the partner | Gateways implemented; routing/BGP choice is **Operational** |
+| 9 | **If NEU VM fails, do clients move to WEU?** | Public clients: yes, via Front Door. VPN clients: no, not automatically. Use a private DNS name repointed to the WEU load balancer | **Operational** (see [docs/architecture.md](docs/architecture.md)) |
+| 10 | **App must start work in WEU if NEU is down** | Application installed in both regions; only one region may process at a time (lease with fencing, idempotent payments) | **Operational** (application design) |
+
+Questions answered in detail: when the firewall needs another public IP, why Front Door does not go through the firewall, and which failover mechanism applies to which failure are in [docs/architecture.md](docs/architecture.md).
+
+### Ready-to-use script for the customer
+
+[`scripts/Deploy-LandingZone.ps1`](scripts/Deploy-LandingZone.ps1) is a PowerShell script that checks prerequisites, validates, plans and applies the deployment, approves the Front Door private endpoint connections, lists the egress IPs Client A must allow-list, and tests the public endpoint.
+
+```powershell
+Get-Help .\scripts\Deploy-LandingZone.ps1 -Full
+.\scripts\Deploy-LandingZone.ps1 -Action Check
+```
 
 ### Interactive Visualizations
 
@@ -13,7 +44,9 @@ Production-ready Azure Landing Zone implementing a **PCI DSS v4.0 compliant Card
 
 ```mermaid
 graph TB
-    Internet((Internet))
+    Internet((Internet clients))
+    ClientB((Client B<br/>inbound over VPN))
+    ClientA((Client A<br/>server))
 
     subgraph Edge["Edge Layer"]
         FD[Azure Front Door Premium<br/>+ WAF OWASP 2.1]
@@ -23,29 +56,27 @@ graph TB
     subgraph NEU["North Europe — Primary"]
         subgraph HubNEU["Hub VNet • 10.1.0.0/16"]
             FW1[Azure Firewall Premium<br/>IDPS + TLS Inspection]
-            VPN1[VPN Gateway<br/>BGP / IPSec]
+            VPN1[VPN Gateway<br/>IPSec]
             Bastion1[Azure Bastion]
             DNS1[Private DNS Zones]
         end
         subgraph SpokeNEU["CDE Spoke • 10.10.0.0/16"]
-            App1[App Service P2v3<br/>VNet-integrated]
-            VM1[VMs - Trusted Launch<br/>JIT Access]
-            SQL1[(SQL Business Critical<br/>TDE + CMK)]
+            PLS1[Private Link Service<br/>+ Internal LB :8082]
+            VM1[IIS VM - Windows Server 2022<br/>Trusted Launch, no public IP]
             KV1[Key Vault]
             HSM1[Managed HSM<br/>FIPS 140-2 L3]
-            ST1[Storage WORM<br/>Immutable Audit]
         end
     end
 
-    subgraph WEU["West Europe — DR"]
+    subgraph WEU["West Europe — Warm standby"]
         subgraph HubWEU["Hub VNet • 10.2.0.0/16"]
             FW2[Azure Firewall Premium<br/>IDPS + TLS Inspection]
-            VPN2[VPN Gateway<br/>BGP / IPSec]
+            VPN2[VPN Gateway<br/>IPSec]
         end
         subgraph SpokeWEU["CDE Spoke • 10.20.0.0/16"]
-            App2[App Service P2v3<br/>Standby]
-            SQL2[(SQL Failover<br/>Read-Only)]
-            ST2[Storage GRS<br/>Geo-Replicated]
+            PLS2[Private Link Service<br/>+ Internal LB :8082]
+            VM2[IIS VM - Windows Server 2022<br/>Trusted Launch, no public IP]
+            HSM2[Managed HSM / Key Vault]
         end
     end
 
@@ -55,23 +86,26 @@ graph TB
         Policy[Azure Policy<br/>PCI DSS v4 Initiative]
     end
 
-    Internet -->|HTTPS| FD
-    FD -->|Private Link| App1
-    FD -.->|Failover| App2
-    App1 -->|UDR → FW| FW1
-    FW1 -->|Private Endpoint| SQL1
-    FW1 -->|Private Endpoint| KV1
-    FW1 -->|Private Endpoint| ST1
-    SQL1 <-->|Auto-Failover<br/>RPO < 5s| SQL2
-    ST1 <-.->|GRS Replication| ST2
-    HubNEU <-->|Hub Peering| HubWEU
-    VPN1 -->|IPSec| OnPrem((On-Premises))
+    Internet -->|HTTPS 443| FD
+    FD -->|Private Link, priority 1| PLS1
+    FD -.->|Private Link, priority 2 failover| PLS2
+    PLS1 --> VM1
+    PLS2 --> VM2
+    ClientB -->|IPSec| VPN1
+    VPN1 --> FW1
+    FW1 -->|TCP 8082| VM1
+    VM1 -->|Private Endpoint| HSM1
+    VM1 -->|UDR → FW → NAT egress| FW1
+    FW1 -->|Client A egress| ClientA
+    VM2 -->|Private Endpoint| HSM2
     Sentinel -.->|Monitors| FW1
     Sentinel -.->|Monitors| FW2
     Defender -.->|Assesses| SpokeNEU
     Policy -.->|Enforces| SpokeNEU
     Policy -.->|Enforces| SpokeWEU
 ```
+
+An optional data platform (Azure SQL with TDE + CMK and immutable audit storage) is available behind `deploy_data_platform` (default `false`) for deployments whose application needs it.
 
 ## Management Group Hierarchy
 
@@ -92,32 +126,49 @@ graph TD
     LZ --> CDE["CDE-Prod 🔴<br/><i>PCI DSS v4 assigned</i>"]
     LZ --> Corp[Corp<br/><i>Non-CDE workloads</i>]
 
-    style CDE fill:#fee2e2,stroke:#ef4444,stroke-width:3px
-    style Root fill:#dbeafe,stroke:#3b82f6,stroke-width:2px
-    style Platform fill:#e0e7ff,stroke:#6366f1
-    style LZ fill:#dcfce7,stroke:#22c55e
+    classDef default fill:#ffffff,stroke:#6b7280,color:#000000
+    style TRG fill:#f3f4f6,stroke:#6b7280,color:#000000
+    style CDE fill:#fee2e2,stroke:#ef4444,stroke-width:3px,color:#000000
+    style Root fill:#dbeafe,stroke:#3b82f6,stroke-width:2px,color:#000000
+    style Platform fill:#e0e7ff,stroke:#6366f1,color:#000000
+    style LZ fill:#dcfce7,stroke:#22c55e,color:#000000
+    style Sandbox fill:#ffffff,stroke:#6b7280,color:#000000
+    style Decom fill:#ffffff,stroke:#6b7280,color:#000000
+    style Conn fill:#ffffff,stroke:#6366f1,color:#000000
+    style Mgmt fill:#ffffff,stroke:#6366f1,color:#000000
+    style Ident fill:#ffffff,stroke:#6366f1,color:#000000
+    style Corp fill:#ffffff,stroke:#22c55e,color:#000000
 ```
 
 ## Traffic Flow
+
+Public web traffic reaches IIS through Front Door and Private Link. It does **not** traverse the firewall; WAF inspects it at the edge. VPN and egress traffic is inspected by the regional firewall.
 
 ```mermaid
 sequenceDiagram
     participant User as Internet User
     participant FD as Front Door + WAF
+    participant PLS as Private Link Service + ILB
+    participant IIS as IIS VM :8082
+    participant B as Client B (VPN)
     participant FW as Firewall Premium
-    participant App as App Service
-    participant SQL as SQL (Private EP)
+    participant A as Client A server
+    participant HSM as Managed HSM (Private EP)
 
-    User->>FD: HTTPS Request
-    Note over FD: WAF OWASP inspection<br/>Bot detection<br/>Rate limiting
-    FD->>App: Private Link (no public IP)
-    Note over FW: IDPS inspection<br/>TLS decryption
-    App->>FW: Data request (UDR 0.0.0.0/0)
-    FW->>SQL: Private Endpoint
-    SQL-->>FW: Encrypted response (TDE)
-    FW-->>App: Inspected traffic
-    App-->>FD: Response
+    User->>FD: HTTPS 443
+    Note over FD: WAF OWASP inspection<br/>Bot detection<br/>TLS terminated, re-encrypted to origin
+    FD->>PLS: Private Link (no public IP)
+    PLS->>IIS: HTTPS 8082 (health-probed)
+    IIS->>HSM: Key operations (private endpoint)
+    IIS-->>FD: Response
     FD-->>User: HTTPS Response
+
+    B->>FW: Over VPN, TCP 8082 only
+    Note over FW: IDPS inspection<br/>Allow-listed prefixes
+    FW->>IIS: Forward (symmetric return path)
+
+    IIS->>FW: Custom app connects out (UDR 0.0.0.0/0)
+    FW->>A: Scoped outbound rule, SNAT to firewall IP(s)
 ```
 
 ## Security Layers (Defence-in-Depth)
@@ -134,7 +185,7 @@ graph LR
     subgraph L2["Layer 2: Network"]
         FW3[Firewall IDPS]
         NSG[NSGs]
-        PE[Private Endpoints]
+        PE[Private Endpoints / PLS]
     end
 
     subgraph L3["Layer 3: Identity"]
@@ -145,72 +196,78 @@ graph LR
 
     subgraph L4["Layer 4: Application"]
         MI[Managed Identity]
-        VNET[VNet Integration]
+        TL[Trusted Launch IIS VM]
     end
 
     subgraph L5["Layer 5: Data"]
-        TDE[TDE + CMK]
+        CMK[CMK Disk Encryption]
         HSM2[Managed HSM]
         WORM[Immutable Storage]
     end
 
     L1 --> L2 --> L3 --> L4 --> L5
 
-    style L1 fill:#fef2f2,stroke:#ef4444,stroke-width:2px
-    style L2 fill:#fff7ed,stroke:#f59e0b,stroke-width:2px
-    style L3 fill:#faf5ff,stroke:#a78bfa,stroke-width:2px
-    style L4 fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
-    style L5 fill:#eff6ff,stroke:#3b82f6,stroke-width:2px
+    style L1 fill:#fef2f2,stroke:#ef4444,stroke-width:2px,color:#000000
+    style L2 fill:#fff7ed,stroke:#f59e0b,stroke-width:2px,color:#000000
+    style L3 fill:#faf5ff,stroke:#a78bfa,stroke-width:2px,color:#000000
+    style L4 fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,color:#000000
+    style L5 fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#000000
+    classDef default fill:#ffffff,stroke:#6b7280,color:#000000
 ```
 
 ## Disaster Recovery
 
+Each failure type has its own mechanism; RTO/RPO targets must be agreed with the business and measured in recovery drills. See [docs/architecture.md](docs/architecture.md) for the full failover design.
+
 ```mermaid
 graph LR
     subgraph Primary["North Europe (Active)"]
-        P_FD[Front Door ●]
-        P_FW[Firewall ●]
-        P_App[App Service ●]
-        P_SQL[(SQL Read-Write ●)]
-        P_HSM[HSM ●]
+        P_FD[Front Door origin, priority 1]
+        P_VM[IIS VM + ILB + PLS ●]
+        P_VPN[VPN Gateway ●]
+        P_APP[App process: holds lease ●]
+        P_HSM[Managed HSM ●]
     end
 
-    subgraph DR["West Europe (Standby)"]
-        D_FD[Front Door ○]
-        D_FW[Firewall ●]
-        D_App[App Service ○]
-        D_SQL[(SQL Read-Only ○)]
-        D_KV[Key Vault ○]
+    subgraph DR["West Europe (Warm standby)"]
+        D_FD[Front Door origin, priority 2]
+        D_VM[IIS VM + ILB + PLS ○]
+        D_VPN[VPN Gateway ○]
+        D_APP[App process: processing disabled ○]
+        D_HSM[Managed HSM ○]
     end
 
-    P_SQL <-->|"Auto-Failover<br/>RTO < 60min | RPO < 5sec"| D_SQL
-    P_FD <-.->|"Active-Active<br/>RTO: 0"| D_FD
-    P_App <-.->|"Active-Passive<br/>RTO < 5min"| D_App
+    P_FD -.->|"Health-probe failover (new requests)"| D_FD
+    P_VPN -.->|"Pre-established tunnels + route/DNS runbook"| D_VPN
+    P_APP -.->|"Fenced lease promotion"| D_APP
+    P_HSM -.->|"Key recovery design to validate"| D_HSM
 
-    style Primary fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
-    style DR fill:#fff7ed,stroke:#f59e0b,stroke-width:2px
+    style Primary fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,color:#000000
+    style DR fill:#fff7ed,stroke:#f59e0b,stroke-width:2px,color:#000000
+    classDef default fill:#ffffff,stroke:#6b7280,color:#000000
 ```
 
 ## Design Principles
 
 | Principle | Implementation |
 |-----------|---------------|
-| Single public entry | Front Door Premium + WAF; no other internet-facing surface |
+| Single public web entry | Front Door Premium + WAF; VMs have no public IPs. VPN gateways and firewall egress still use their own public IPs |
 | No public IPs in CDE | Enforced by Azure Policy deny |
-| All egress through Firewall | UDR 0.0.0.0/0 → Firewall on every spoke |
-| Private data plane | SQL, Storage, Key Vault, HSM via private endpoints only |
-| HSM-held keys | Payment HSM / Managed HSM with CMK for TDE |
-| Least privilege | PIM just-in-time, phishing-resistant MFA, no standing owners |
-| Active DR | Front Door + SQL auto-failover across NEU ↔ WEU |
+| Egress through Firewall | UDR 0.0.0.0/0 → Firewall on every spoke subnet |
+| Private origins | Front Door → Private Link Service → internal load balancer → IIS on TCP 8082 |
+| Private key plane | Managed HSM and Key Vault via private endpoints only |
+| HSM-held keys | Managed HSM / Key Vault Premium with CMK for VM disks (and SQL TDE when enabled) |
+| Least privilege | PIM just-in-time, phishing-resistant MFA, Entra sign-in to VMs, no standing owners |
+| Regional recovery | Front Door priority failover; separate VPN, private DNS, state/key and worker-ownership mechanisms |
 | Defence-in-depth | Five concentric security layers |
 
 ## Well-Architected Framework Alignment
 
-- **Reliability**: Multi-region active-passive DR, zone-redundant services, auto-failover groups
-- **Security**: Zero-trust network, HSM key management, IDPS inspection, WAF, policy-driven compliance
-- **Cost Optimization**: Right-sized SKUs, reserved capacity for predictable workloads
+- **Reliability**: Warm-standby second region, dependency-aware health probes, dual-region VPN, fenced worker promotion; targets defined and measured, not assumed
+- **Security**: Zero-trust network, HSM key management, IDPS inspection, WAF, policy-driven governance
+- **Cost Optimization**: Right-sized VM, firewall and VPN SKUs; standby capacity sized to recovery objectives
 - **Operational Excellence**: IaC-only deployment, CI/CD with OIDC, Sentinel + Defender monitoring
-- **Performance Efficiency**: Front Door caching, zone-redundant compute, Business Critical SQL tier
+- **Performance Efficiency**: Load-tested IIS on 8082, firewall SNAT and HSM latency baselines
 
 ## Repository Structure
 
@@ -219,25 +276,25 @@ graph LR
 │   ├── management-groups/     # ALZ management group hierarchy
 │   ├── policy/                # PCI DSS v4 policy assignments
 │   ├── connectivity/
-│   │   ├── hub/               # Hub VNet, subnets, peering
-│   │   ├── spoke/             # CDE spoke VNet
-│   │   ├── firewall/          # Azure Firewall Premium
-│   │   ├── front-door/        # Front Door Premium + WAF
+│   │   ├── hub/               # Hub VNet, subnets, Bastion, VPN gateway
+│   │   ├── spoke/             # CDE spoke VNet, NSGs, Private Link Service subnet
+│   │   ├── firewall/          # Azure Firewall Premium, Client A/B rules
+│   │   ├── front-door/        # Front Door Premium + WAF, private VM origins
 │   │   └── dns/               # Private DNS zones
 │   ├── security/
 │   │   ├── defender/          # Microsoft Defender for Cloud
 │   │   ├── sentinel/          # Microsoft Sentinel workspace
 │   │   └── identity/          # PIM, Conditional Access
 │   ├── data-platform/
-│   │   ├── sql/               # Azure SQL with TDE + CMK
-│   │   ├── storage/           # Immutable audit storage
-│   │   └── hsm/               # Managed HSM / Payment HSM
+│   │   ├── sql/               # Azure SQL with TDE + CMK (optional)
+│   │   ├── storage/           # Immutable audit storage (optional)
+│   │   └── hsm/               # Managed HSM, Key Vault, Disk Encryption Set
 │   └── application-platform/
-│       ├── app-service/        # VNet-integrated App Service
-│       └── compute/            # Trusted Launch VMs + JIT
+│       └── compute/           # Windows IIS VM + internal LB + Private Link Service
 ├── environments/
 │   ├── prod/                   # North Europe primary
-│   └── dr/                     # West Europe disaster recovery
+│   └── dr/                     # West Europe warm standby (hub, VPN, firewall, spoke, IIS VM)
+├── bicep/                      # Bicep equivalent of the NEU + WEU deployment
 ├── .github/workflows/          # CI/CD pipeline
 └── docs/                       # Architecture & compliance docs
 ```
@@ -248,6 +305,7 @@ graph LR
 - Azure CLI >= 2.50
 - An Azure tenant with Global Administrator access (initial setup)
 - GitHub Actions with Workload Identity Federation (OIDC)
+- A certificate for the application FQDN (covering both regions) for IIS on TCP 8082
 
 ## Quick Start
 
@@ -266,19 +324,21 @@ terraform plan -var-file="terraform.tfvars"
 terraform apply -var-file="terraform.tfvars"
 ```
 
+See [docs/deployment-guide.md](docs/deployment-guide.md) for the phased deployment order, West Europe stack, Front Door approvals and Client A/B configuration.
+
 ## PCI DSS v4.0 Compliance
 
-This landing zone addresses all 12 PCI DSS requirements through Azure-native controls. See [docs/pci-dss-mapping.md](docs/pci-dss-mapping.md) for the full requirement-to-control mapping.
+This landing zone maps the 12 PCI DSS requirements to Azure-native controls. See [docs/pci-dss-mapping.md](docs/pci-dss-mapping.md) for the requirement-to-control mapping. The mapping is an input to a QSA assessment, not an attestation.
 
 ## Deployment Phases
 
-| Phase | Scope | Duration |
-|-------|-------|----------|
-| 0 | Foundation & Governance (MG, Policy, Defender, Identity) | 2 weeks |
-| 1 | Connectivity & Security (Hub-spoke, Firewall, VPN, Bastion) | 2 weeks |
-| 2 | Data & Key Platform (HSM, SQL, Storage, Private Endpoints) | 2 weeks |
-| 3 | Application Platform (App Service, Front Door, VMs) | 2 weeks |
-| 4 | Validation & Go-live (Compliance proof, DR test, QSA prep) | 2 weeks |
+| Phase | Scope |
+|-------|-------|
+| 0 | Foundation & Governance (MG, Policy, Defender, Identity) |
+| 1 | Connectivity & Security (Hub-spoke, Firewall, VPN, Bastion) |
+| 2 | Key Platform (HSM, Key Vault, Disk Encryption Set) and optional data platform |
+| 3 | Application Platform (IIS VMs, internal LB + Private Link Service, Front Door) in both regions |
+| 4 | Validation & Go-live (Compliance evidence, failover tests, QSA prep) |
 
 ## License
 

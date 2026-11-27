@@ -87,6 +87,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
 }
 .node .icon { font-size: 2.4em; display: block; margin-bottom: 4px; }
 .node .label { white-space: nowrap; font-weight: 600; color: #212529; }
+.node .sub { display: block; font-size: 0.75em; color: var(--muted); margin-top: 2px; white-space: nowrap; }
 
 /* Animated connection lines via SVG */
 .connections { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
@@ -315,7 +316,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
 
 <div class="header">
   <h1>☁️ <span>Azure Landing Zone</span> — PCI-DSS v4.0</h1>
-  <p>Interactive Architecture Diagram • Hub-Spoke CDE • North Europe ↔ West Europe</p>
+  <p>Interactive Architecture Diagram • Hub-Spoke CDE • IIS VMs • North Europe ↔ West Europe (proposed design)</p>
 </div>
 
 <div class="tabs">
@@ -342,8 +343,16 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
   </div>
 
   <!-- DDoS -->
-  <div class="node" id="n-ddos" style="top:100px;left:80%;">
+  <div class="node" id="n-ddos" style="top:100px;left:66%;">
     <span class="icon">🛡️</span><span class="label">DDoS Protection</span>
+  </div>
+
+  <!-- Partner clients -->
+  <div class="node" id="n-clientb" style="top:10px;left:3%;">
+    <span class="icon">🏦</span><span class="label">Client B</span><span class="sub">Inbound over VPN</span>
+  </div>
+  <div class="node" id="n-clienta" style="top:10px;left:80%;border-color:var(--orange);">
+    <span class="icon">🏦</span><span class="label">Client A</span><span class="sub">VM-initiated egress</span>
   </div>
 
   <!-- ===== Primary Region ===== -->
@@ -357,16 +366,16 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
   </div>
 
   <div class="node" id="n-fw1" style="top:280px;left:5%;border-color:var(--orange);">
-    <span class="icon">🔥</span><span class="label">Firewall Premium</span>
+    <span class="icon">🔥</span><span class="label">Firewall Premium</span><span class="sub">+ NAT Gateway egress IP</span>
   </div>
   <div class="node" id="n-vpn1" style="top:280px;left:26%;">
-    <span class="icon">🔒</span><span class="label">VPN Gateway</span>
+    <span class="icon">🔒</span><span class="label">VPN Gateway</span><span class="sub">S2S to clients</span>
   </div>
   <div class="node" id="n-bastion1" style="top:380px;left:5%;">
     <span class="icon">🖥️</span><span class="label">Bastion</span>
   </div>
   <div class="node" id="n-dns1" style="top:380px;left:26%;">
-    <span class="icon">📡</span><span class="label">Private DNS</span>
+    <span class="icon">📡</span><span class="label">Private DNS</span><span class="sub">VPN app FQDN</span>
   </div>
 
   <!-- CDE Spoke Primary -->
@@ -374,28 +383,28 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
     <span class="zone-label" style="background:rgba(239,68,68,0.15);color:var(--red);">🔴 CDE Spoke • 10.10.0.0/16</span>
   </div>
 
-  <div class="node" id="n-app1" style="top:550px;left:4%;border-color:var(--green);">
-    <span class="icon">📱</span><span class="label">App Service (P2v3)</span>
+  <div class="node" id="n-ilb1" style="top:550px;left:4%;border-color:var(--green);">
+    <span class="icon">🔗</span><span class="label">Private Link Service + ILB</span><span class="sub">TCP 8082 • Front Door origin</span>
   </div>
-  <div class="node" id="n-vm1" style="top:550px;left:26%;">
-    <span class="icon">💻</span><span class="label">VM (Trusted Launch)</span>
+  <div class="node" id="n-vm1" style="top:550px;left:26%;border-color:var(--green);">
+    <span class="icon">💻</span><span class="label">IIS VM</span><span class="sub">HTTPS 8082 • active</span>
   </div>
-  <div class="node" id="n-sql1" style="top:660px;left:4%;border-color:var(--purple);">
-    <span class="icon">🗄️</span><span class="label">SQL Business Critical</span>
+  <div class="node" id="n-worker1" style="top:660px;left:4%;">
+    <span class="icon">⚙️</span><span class="label">Custom App Process</span><span class="sub">Lease holder (active)</span>
   </div>
   <div class="node" id="n-kv1" style="top:660px;left:26%;">
-    <span class="icon">🔑</span><span class="label">Key Vault</span>
+    <span class="icon">🔑</span><span class="label">Key Vault</span><span class="sub">Private endpoint</span>
   </div>
   <div class="node" id="n-hsm1" style="top:770px;left:4%;border-color:var(--purple);">
-    <span class="icon">🔐</span><span class="label">Managed HSM</span>
+    <span class="icon">🔐</span><span class="label">Managed HSM</span><span class="sub">Private endpoint</span>
   </div>
-  <div class="node" id="n-storage1" style="top:770px;left:26%;">
-    <span class="icon">💾</span><span class="label">Storage (WORM)</span>
+  <div class="node" id="n-state1" style="top:770px;left:26%;">
+    <span class="icon">💾</span><span class="label">App State</span><span class="sub">Recovery design TBD</span>
   </div>
 
   <!-- ===== DR Region ===== -->
   <div class="zone" style="top:200px;right:20px;width:47%;height:800px;border-color:var(--orange);">
-    <span class="zone-label" style="background:rgba(245,158,11,0.15);color:var(--orange);">🟠 West Europe (DR)</span>
+    <span class="zone-label" style="background:rgba(245,158,11,0.15);color:var(--orange);">🟠 West Europe (warm standby)</span>
 
     <div class="zone" style="top:40px;left:8px;width:92%;height:250px;border-color:var(--accent);">
       <span class="zone-label" style="background:rgba(79,140,255,0.15);color:var(--accent);">Hub VNet • 10.2.0.0/16</span>
@@ -403,10 +412,10 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
   </div>
 
   <div class="node" id="n-fw2" style="top:280px;right:26%;">
-    <span class="icon">🔥</span><span class="label">Firewall Premium</span>
+    <span class="icon">🔥</span><span class="label">Firewall Premium</span><span class="sub">+ separate egress IP</span>
   </div>
   <div class="node" id="n-vpn2" style="top:280px;right:5%;">
-    <span class="icon">🔒</span><span class="label">VPN Gateway</span>
+    <span class="icon">🔒</span><span class="label">VPN Gateway</span><span class="sub">Pre-established tunnels</span>
   </div>
   <div class="node" id="n-bastion2" style="top:380px;right:26%;">
     <span class="icon">🖥️</span><span class="label">Bastion</span>
@@ -419,20 +428,23 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
     <span class="zone-label" style="background:rgba(239,68,68,0.15);color:var(--red);">🔴 CDE Spoke • 10.20.0.0/16</span>
   </div>
 
-  <div class="node" id="n-app2" style="top:550px;right:26%;">
-    <span class="icon">📱</span><span class="label">App Service (P2v3)</span>
+  <div class="node" id="n-ilb2" style="top:550px;right:26%;border-color:var(--orange);">
+    <span class="icon">🔗</span><span class="label">Private Link Service + ILB</span><span class="sub">TCP 8082 • priority 2 origin</span>
   </div>
-  <div class="node" id="n-vm2" style="top:550px;right:5%;">
-    <span class="icon">💻</span><span class="label">VM (Trusted Launch)</span>
+  <div class="node" id="n-vm2" style="top:550px;right:5%;border-color:var(--orange);">
+    <span class="icon">💻</span><span class="label">IIS VM</span><span class="sub">HTTPS 8082 • warm standby</span>
   </div>
-  <div class="node" id="n-sql2" style="top:660px;right:26%;border-color:var(--purple);">
-    <span class="icon">🗄️</span><span class="label">SQL (Failover)</span>
+  <div class="node" id="n-worker2" style="top:660px;right:26%;">
+    <span class="icon">⚙️</span><span class="label">Custom App Process</span><span class="sub">Processing disabled</span>
   </div>
   <div class="node" id="n-kv2" style="top:660px;right:5%;">
-    <span class="icon">🔑</span><span class="label">Key Vault</span>
+    <span class="icon">🔑</span><span class="label">Key Vault</span><span class="sub">Private endpoint</span>
   </div>
-  <div class="node" id="n-storage2" style="top:770px;right:15%;">
-    <span class="icon">💾</span><span class="label">Storage (GRS)</span>
+  <div class="node" id="n-hsm2" style="top:770px;right:26%;border-color:var(--purple);">
+    <span class="icon">🔐</span><span class="label">Managed HSM</span><span class="sub">Recovery design TBD</span>
+  </div>
+  <div class="node" id="n-state2" style="top:770px;right:5%;">
+    <span class="icon">💾</span><span class="label">App State</span><span class="sub">Recovery design TBD</span>
   </div>
 
   <!-- Management Zone -->
@@ -460,33 +472,59 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
 <!-- ===================== VIEW 2: TRAFFIC FLOW ===================== -->
 <div class="view" id="view-flow">
 
-  <div class="flow-section-title">✅ Allowed: Inbound request via Front Door (the ONLY public path)</div>
+  <div class="flow-section-title">✅ Public web: Front Door WAF → Private Link → IIS (does not traverse Firewall)</div>
   <div class="flow-container">
     <div class="flow-row">
       <div class="flow-box"><span class="icon">🌐</span><span class="name">Internet User</span><span class="detail">HTTPS request</span></div>
       <div class="flow-pipe"><div class="pulse"></div><div class="pulse"></div></div>
       <div class="flow-box" style="border-color:var(--green);"><span class="flow-badge badge-inspect">INSPECT</span><span class="icon">🚪</span><span class="name">Front Door</span><span class="detail">WAF OWASP 2.1</span></div>
       <div class="flow-pipe inspect"><div class="pulse"></div><div class="pulse"></div></div>
-      <div class="flow-box"><span class="flow-badge badge-allow">PRIVATE LINK</span><span class="icon">🔗</span><span class="name">Private Endpoint</span><span class="detail">No public IP</span></div>
+      <div class="flow-box"><span class="flow-badge badge-allow">PRIVATE LINK</span><span class="icon">🔗</span><span class="name">Private Endpoint</span><span class="detail">Front Door-managed</span></div>
       <div class="flow-pipe"><div class="pulse"></div><div class="pulse"></div></div>
-      <div class="flow-box" style="border-color:var(--orange);"><span class="flow-badge badge-inspect">IDPS</span><span class="icon">🔥</span><span class="name">Firewall Premium</span><span class="detail">TLS Inspection</span></div>
+      <div class="flow-box" style="border-color:var(--orange);"><span class="icon">⚖️</span><span class="name">PLS + Internal LB</span><span class="detail">NEU p1 • WEU p2</span></div>
       <div class="flow-pipe"><div class="pulse"></div><div class="pulse"></div></div>
-      <div class="flow-box" style="border-color:var(--green);"><span class="flow-badge badge-allow">✅</span><span class="icon">📱</span><span class="name">App Service</span><span class="detail">VNet-integrated</span></div>
+      <div class="flow-box" style="border-color:var(--green);"><span class="flow-badge badge-allow">8082</span><span class="icon">💻</span><span class="name">IIS VM</span><span class="detail">HTTPS, private NIC</span></div>
     </div>
   </div>
 
-  <div class="flow-section-title" style="margin-top:30px;">🔒 App → Data (all via Private Endpoints, through Firewall)</div>
+  <div class="flow-section-title" style="margin-top:30px;">🔒 Client B: inbound over VPN (inspected by Firewall)</div>
   <div class="flow-container">
     <div class="flow-row">
-      <div class="flow-box"><span class="icon">📱</span><span class="name">App Service</span><span class="detail">Managed Identity</span></div>
+      <div class="flow-box"><span class="icon">🏦</span><span class="name">Client B</span><span class="detail">Approved prefixes only</span></div>
       <div class="flow-pipe"><div class="pulse"></div><div class="pulse"></div></div>
-      <div class="flow-box" style="border-color:var(--orange);"><span class="icon">🔥</span><span class="name">Firewall</span><span class="detail">UDR 0.0.0.0/0</span></div>
+      <div class="flow-box"><span class="icon">🔒</span><span class="name">VPN Gateway</span><span class="detail">S2S tunnel</span></div>
+      <div class="flow-pipe inspect"><div class="pulse"></div><div class="pulse"></div></div>
+      <div class="flow-box" style="border-color:var(--orange);"><span class="flow-badge badge-inspect">IDPS</span><span class="icon">🔥</span><span class="name">Firewall Premium</span><span class="detail">Allow TCP 8082 only</span></div>
       <div class="flow-pipe"><div class="pulse"></div><div class="pulse"></div></div>
-      <div class="flow-box"><span class="icon">🔗</span><span class="name">Private Endpoint</span><span class="detail">privatelink.*</span></div>
-      <div class="flow-pipe"><div class="pulse"></div><div class="pulse"></div></div>
-      <div class="flow-box" style="border-color:var(--purple);"><span class="icon">🗄️</span><span class="name">SQL / Storage</span><span class="detail">TDE + CMK</span></div>
+      <div class="flow-box" style="border-color:var(--green);"><span class="icon">💻</span><span class="name">ILB → IIS VM</span><span class="detail">Symmetric return path</span></div>
     </div>
   </div>
+
+  <div class="flow-section-title" style="margin-top:30px;">📤 Client A: VM-initiated egress (public destination shown)</div>
+  <div class="flow-container">
+    <div class="flow-row">
+      <div class="flow-box"><span class="icon">⚙️</span><span class="name">App Process</span><span class="detail">On IIS VM</span></div>
+      <div class="flow-pipe"><div class="pulse"></div><div class="pulse"></div></div>
+      <div class="flow-box" style="border-color:var(--orange);"><span class="flow-badge badge-inspect">UDR</span><span class="icon">🔥</span><span class="name">Firewall Premium</span><span class="detail">Scoped outbound rule</span></div>
+      <div class="flow-pipe inspect"><div class="pulse"></div><div class="pulse"></div></div>
+      <div class="flow-box"><span class="icon">🌍</span><span class="name">NAT Gateway</span><span class="detail">On firewall subnet</span></div>
+      <div class="flow-pipe"><div class="pulse"></div><div class="pulse"></div></div>
+      <div class="flow-box" style="border-color:var(--orange);"><span class="icon">🏦</span><span class="name">Client A</span><span class="detail">Allowlists egress IPs</span></div>
+    </div>
+  </div>
+  <p style="max-width:1100px;margin:8px auto 0;font-size:0.85em;color:var(--muted);">Reserving a public IP does not choose a path. All firewall internet flows share the NAT Gateway address, and a firewall-IP addition does not provide per-client SNAT. If Client A is reached over VPN, traffic uses Firewall → VPN Gateway instead; NAT Gateway does not apply.</p>
+
+  <div class="flow-section-title" style="margin-top:30px;">🔐 App → HSM (private endpoint)</div>
+  <div class="flow-container">
+    <div class="flow-row">
+      <div class="flow-box"><span class="icon">💻</span><span class="name">IIS VM</span><span class="detail">Managed identity</span></div>
+      <div class="flow-pipe"><div class="pulse"></div><div class="pulse"></div></div>
+      <div class="flow-box"><span class="icon">🔗</span><span class="name">Private Endpoint</span><span class="detail">privatelink DNS</span></div>
+      <div class="flow-pipe"><div class="pulse"></div><div class="pulse"></div></div>
+      <div class="flow-box" style="border-color:var(--purple);"><span class="icon">🔐</span><span class="name">Managed HSM</span><span class="detail">Local RBAC • no internet</span></div>
+    </div>
+  </div>
+  <p style="max-width:1100px;margin:8px auto 0;font-size:0.85em;color:var(--muted);">Private endpoint traffic is not firewall-inspected unless routing and network policies are explicitly configured.</p>
 
   <div class="flow-section-title" style="margin-top:30px;">🚫 Blocked: Direct access attempt (bypassing Front Door)</div>
   <div class="flow-container">
@@ -495,7 +533,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
       <div class="flow-pipe deny"><div class="pulse"></div><div class="pulse"></div></div>
       <div class="flow-box" style="border-color:var(--red);"><span class="flow-badge badge-deny">DENY</span><span class="icon">🚫</span><span class="name">No Public IP</span><span class="detail">Policy enforced</span></div>
       <div class="flow-pipe deny" style="opacity:0.3;"><div class="pulse" style="display:none;"></div></div>
-      <div class="flow-box" style="opacity:0.3;"><span class="icon">📱</span><span class="name">App Service</span><span class="detail">Unreachable</span></div>
+      <div class="flow-box" style="opacity:0.3;"><span class="icon">�</span><span class="name">IIS VM</span><span class="detail">Unreachable</span></div>
     </div>
   </div>
 
@@ -585,7 +623,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
   </div>
   <div class="ring r2">
     <span class="ring-label">🔥 NETWORK — Firewall + NSGs + UDRs</span>
-    <span class="ring-detail" style="bottom:15px;left:50%;transform:translateX(-50%);">IDPS Deny · TLS Inspection · Private Endpoints</span>
+    <span class="ring-detail" style="bottom:15px;left:50%;transform:translateX(-50%);">VPN + egress inspection · NSGs · Private Link</span>
   </div>
   <div class="ring r3">
     <span class="ring-label">🪪 IDENTITY — Entra ID + PIM + CA</span>
@@ -593,11 +631,11 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
   </div>
   <div class="ring r4">
     <span class="ring-label">📱 APPLICATION</span>
-    <span class="ring-detail" style="bottom:8px;left:50%;transform:translateX(-50%);">Managed Identity</span>
+    <span class="ring-detail" style="bottom:8px;left:50%;transform:translateX(-50%);">IIS · Managed Identity</span>
   </div>
   <div class="ring r5"><span class="ring-label">💎 DATA</span></div>
 </div>
-<p style="text-align:center;color:var(--muted);margin-top:20px;">5 concentric defence layers — an attacker must breach ALL to reach cardholder data</p>
+<p style="text-align:center;color:var(--muted);margin-top:20px;">5 concentric defence layers; controls must be validated with the QSA</p>
 <div class="legend">
   <div class="legend-item"><div class="legend-dot" style="background:#ef4444;"></div> Edge</div>
   <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div> Network</div>
@@ -614,49 +652,49 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
   <!-- Primary -->
   <div class="dr-region primary">
     <span class="dr-badge active">● ACTIVE</span>
-    <div class="dr-title">🇳🇱 North Europe (Primary)</div>
+    <div class="dr-title">�🇪 North Europe (Primary)</div>
     <div class="dr-services">
-      <div class="dr-svc"><span class="icon">🚪</span><div class="info"><span class="name">Front Door</span><span class="detail">Global — active-active routing</span></div><span class="status status-active">Active</span></div>
-      <div class="dr-svc"><span class="icon">🔥</span><div class="info"><span class="name">Firewall Premium</span><span class="detail">Zone-redundant, IDPS Deny</span></div><span class="status status-active">Active</span></div>
-      <div class="dr-svc"><span class="icon">📱</span><div class="info"><span class="name">App Service</span><span class="detail">P2v3 zone-balanced</span></div><span class="status status-active">Active</span></div>
-      <div class="dr-svc"><span class="icon">🗄️</span><div class="info"><span class="name">SQL Business Critical</span><span class="detail">Primary read-write</span></div><span class="status status-active">Read-Write</span></div>
-      <div class="dr-svc"><span class="icon">🔐</span><div class="info"><span class="name">Managed HSM</span><span class="detail">FIPS 140-2 Level 3</span></div><span class="status status-active">Active</span></div>
-      <div class="dr-svc"><span class="icon">💾</span><div class="info"><span class="name">Storage (WORM)</span><span class="detail">GRS replication enabled</span></div><span class="status status-sync">Replicating →</span></div>
+      <div class="dr-svc"><span class="icon">🚪</span><div class="info"><span class="name">Front Door</span><span class="detail">Global — NEU private origin, priority 1</span></div><span class="status status-active">Active</span></div>
+      <div class="dr-svc"><span class="icon">💻</span><div class="info"><span class="name">IIS VM behind PLS + ILB</span><span class="detail">HTTPS 8082 with readiness probe</span></div><span class="status status-active">Active</span></div>
+      <div class="dr-svc"><span class="icon">🔒</span><div class="info"><span class="name">VPN Gateway</span><span class="detail">Client A / Client B tunnels</span></div><span class="status status-active">Active</span></div>
+      <div class="dr-svc"><span class="icon">🔥</span><div class="info"><span class="name">Firewall Premium</span><span class="detail">VPN ingress + egress inspection</span></div><span class="status status-active">Active</span></div>
+      <div class="dr-svc"><span class="icon">⚙️</span><div class="info"><span class="name">Custom App Process</span><span class="detail">Holds fenced processing lease</span></div><span class="status status-active">Processing</span></div>
+      <div class="dr-svc"><span class="icon">🔐</span><div class="info"><span class="name">Managed HSM</span><span class="detail">Private endpoint, local RBAC</span></div><span class="status status-active">Active</span></div>
     </div>
   </div>
 
   <!-- Arrow -->
   <div class="dr-arrow-container">
     <span class="dr-arrow">⇄</span>
-    <span class="dr-arrow-label">Auto-failover<br>SQL: &lt;60min<br>RPO: &lt;5sec</span>
+    <span class="dr-arrow-label">Web: probe failover<br>VPN/DNS: tested runbook<br>Worker/state/keys: fenced promotion</span>
     <span class="dr-arrow" style="animation-delay:1s;">⇄</span>
   </div>
 
   <!-- DR -->
   <div class="dr-region secondary">
     <span class="dr-badge standby">○ STANDBY</span>
-    <div class="dr-title">🇳🇱 West Europe (DR)</div>
+    <div class="dr-title">🇳🇱 West Europe (Warm standby)</div>
     <div class="dr-services">
-      <div class="dr-svc"><span class="icon">🚪</span><div class="info"><span class="name">Front Door</span><span class="detail">Routes here on failover</span></div><span class="status status-passive">Standby</span></div>
-      <div class="dr-svc"><span class="icon">🔥</span><div class="info"><span class="name">Firewall Premium</span><span class="detail">Mirrored config</span></div><span class="status status-active">Active</span></div>
-      <div class="dr-svc"><span class="icon">📱</span><div class="info"><span class="name">App Service</span><span class="detail">P2v3 zone-balanced</span></div><span class="status status-passive">Standby</span></div>
-      <div class="dr-svc"><span class="icon">🗄️</span><div class="info"><span class="name">SQL Business Critical</span><span class="detail">Failover group secondary</span></div><span class="status status-passive">Read-Only</span></div>
-      <div class="dr-svc"><span class="icon">🔑</span><div class="info"><span class="name">Key Vault</span><span class="detail">Geo-replicated</span></div><span class="status status-sync">Synced</span></div>
-      <div class="dr-svc"><span class="icon">💾</span><div class="info"><span class="name">Storage (GRS)</span><span class="detail">Geo-redundant secondary</span></div><span class="status status-sync">← Receiving</span></div>
+      <div class="dr-svc"><span class="icon">🚪</span><div class="info"><span class="name">Front Door</span><span class="detail">WEU private origin, priority 2</span></div><span class="status status-passive">Standby</span></div>
+      <div class="dr-svc"><span class="icon">💻</span><div class="info"><span class="name">IIS VM behind PLS + ILB</span><span class="detail">Configured, patched, ready</span></div><span class="status status-passive">Warm</span></div>
+      <div class="dr-svc"><span class="icon">🔒</span><div class="info"><span class="name">VPN Gateway</span><span class="detail">Pre-established tunnels, tested routes</span></div><span class="status status-passive">Ready</span></div>
+      <div class="dr-svc"><span class="icon">🔥</span><div class="info"><span class="name">Firewall Premium</span><span class="detail">Mirrored rules, separate egress IP</span></div><span class="status status-active">Active</span></div>
+      <div class="dr-svc"><span class="icon">⚙️</span><div class="info"><span class="name">Custom App Process</span><span class="detail">Installed; processing disabled</span></div><span class="status status-passive">Standby</span></div>
+      <div class="dr-svc"><span class="icon">🔐</span><div class="info"><span class="name">Managed HSM</span><span class="detail">Key recovery topology to validate</span></div><span class="status status-sync">Validate</span></div>
     </div>
   </div>
 
 </div>
 
 <div style="max-width:700px;margin:30px auto;background:#ffffff;border-radius:12px;padding:20px;border:2px solid var(--border);box-shadow:0 2px 10px rgba(0,0,0,0.06);">
-  <h3 style="margin-bottom:12px;font-size:1.1em;color:#212529;">⏱️ Recovery Targets</h3>
+  <h3 style="margin-bottom:12px;font-size:1.1em;color:#212529;">🔄 Failure Mechanisms (RTO/RPO to be agreed and measured)</h3>
   <table style="width:100%;font-size:0.95em;border-collapse:collapse;">
-    <tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:10px;color:#212529;">Component</th><th style="padding:10px;color:#212529;">Strategy</th><th style="padding:10px;color:#212529;">RTO</th><th style="padding:10px;color:#212529;">RPO</th></tr>
-    <tr style="border-bottom:1px solid var(--border);"><td style="padding:10px;">🚪 Front Door</td><td style="padding:10px;text-align:center;">Active-Active</td><td style="padding:10px;text-align:center;color:var(--green);font-weight:700;">0 min</td><td style="padding:10px;text-align:center;color:var(--green);font-weight:700;">0</td></tr>
-    <tr style="border-bottom:1px solid var(--border);"><td style="padding:10px;">📱 App Service</td><td style="padding:10px;text-align:center;">Active-Passive</td><td style="padding:10px;text-align:center;color:var(--green);font-weight:700;">&lt; 5 min</td><td style="padding:10px;text-align:center;color:var(--green);font-weight:700;">0</td></tr>
-    <tr style="border-bottom:1px solid var(--border);"><td style="padding:10px;">🗄️ Azure SQL</td><td style="padding:10px;text-align:center;">Auto-Failover Group</td><td style="padding:10px;text-align:center;color:var(--orange);font-weight:700;">&lt; 60 min</td><td style="padding:10px;text-align:center;color:var(--green);font-weight:700;">&lt; 5 sec</td></tr>
-    <tr style="border-bottom:1px solid var(--border);"><td style="padding:10px;">🔥 Firewall</td><td style="padding:10px;text-align:center;">Per-Region</td><td style="padding:10px;text-align:center;color:var(--green);font-weight:700;">0</td><td style="padding:10px;text-align:center;">N/A</td></tr>
-    <tr><td style="padding:10px;">🔑 Key Vault / HSM</td><td style="padding:10px;text-align:center;">Geo-Replicated</td><td style="padding:10px;text-align:center;color:var(--green);font-weight:700;">Auto</td><td style="padding:10px;text-align:center;color:var(--green);font-weight:700;">~0</td></tr>
+    <tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:10px;color:#212529;">Failure</th><th style="text-align:left;padding:10px;color:#212529;">Recovery mechanism</th><th style="text-align:left;padding:10px;color:#212529;">Limit</th></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:10px;">🚪 NEU public origin down</td><td style="padding:10px;">Front Door probes route new requests to WEU</td><td style="padding:10px;">In-flight requests are not migrated</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:10px;">🔒 NEU VPN down</td><td style="padding:10px;">Tunnels to WEU gateway; BGP or tested route automation</td><td style="padding:10px;">Needs partner device and route support</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:10px;">💻 NEU VM down, VPN up</td><td style="padding:10px;">Controlled private DNS switch to WEU ILB</td><td style="padding:10px;">VPN/BGP does not detect IIS failure</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:10px;">⚙️ NEU worker down</td><td style="padding:10px;">Fenced lease promotion to WEU</td><td style="padding:10px;">Front Door cannot start or own jobs</td></tr>
+    <tr><td style="padding:10px;">🔐 State or HSM unavailable</td><td style="padding:10px;">Tested state and key recovery before WEU is ready</td><td style="padding:10px;">Traffic failover does not recover data or keys</td></tr>
   </table>
 </div>
 </div>

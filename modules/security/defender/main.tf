@@ -12,11 +12,6 @@ resource "azurerm_security_center_subscription_pricing" "servers" {
   resource_type = "VirtualMachines"
 }
 
-resource "azurerm_security_center_subscription_pricing" "app_services" {
-  tier          = "Standard"
-  resource_type = "AppServices"
-}
-
 resource "azurerm_security_center_subscription_pricing" "sql" {
   tier          = "Standard"
   resource_type = "SqlServers"

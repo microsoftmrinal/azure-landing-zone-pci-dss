@@ -21,6 +21,30 @@ h1 { font-size: 2.2em; text-align: center; margin-bottom: 8px; }
 h1 span { color: #4f8cff; }
 .subtitle { color: #94a3b8; text-align: center; font-size: 1.1em; }
 main { width: 100%; }
+.requirements {
+  max-width: 1400px;
+  margin: 24px auto 0;
+  padding: 0 20px;
+}
+.requirements h2 { font-size: 1.3em; margin-bottom: 4px; color: #f8fafc; }
+.requirements .note { color: #94a3b8; font-size: 0.92em; margin-bottom: 14px; }
+.req-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 12px;
+}
+.req {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-left: 4px solid #22c55e;
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+.req.ops { border-left-color: #f59e0b; }
+.req h3 { font-size: 0.98em; margin-bottom: 4px; color: #f8fafc; }
+.req p { font-size: 0.88em; color: #cbd5e1; line-height: 1.45; }
+.req .tag { display: inline-block; margin-top: 6px; font-size: 0.75em; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #14532d; color: #bbf7d0; }
+.req.ops .tag { background: #78350f; color: #fde68a; }
 .viewer-toolbar {
   display: flex;
   align-items: center;
@@ -78,6 +102,24 @@ footer a { color: #4f8cff; text-decoration: none; }
     <h1>☁️ Azure Landing Zone — <span>PCI-DSS v4.0</span></h1>
     <p class="subtitle">Interactive architecture visualizations for Payment24</p>
   </header>
+
+  <section class="requirements" aria-labelledby="req-title">
+    <h2 id="req-title">Customer requirements</h2>
+    <p class="note">Green = implemented in the repository. Amber = needs a customer decision or runbook (operational).</p>
+    <div class="req-grid">
+      <div class="req"><h3>Windows IIS VMs in North Europe and West Europe</h3><p>Virtual machines only. One Trusted Launch VM per region, no public IP, behind an internal load balancer and Private Link Service.</p><span class="tag">Implemented</span></div>
+      <div class="req"><h3>IIS on port 8082 with an SSL FQDN</h3><p>HTTPS on TCP 8082 end to end; Front Door checks the certificate name against the application FQDN.</p><span class="tag">Implemented</span></div>
+      <div class="req ops"><h3>Certificate and IIS binding</h3><p>The site, the 8082 HTTPS binding and the certificate for the FQDN are deployed by the application pipeline.</p><span class="tag">Operational</span></div>
+      <div class="req"><h3>Public internet clients</h3><p>Front Door Premium + WAF is the only public web entry and reaches the VMs over Private Link. It does not pass through the firewall.</p><span class="tag">Implemented</span></div>
+      <div class="req"><h3>Client B: inbound over VPN</h3><p>VPN Gateway, then Firewall Premium, then IIS on 8082 only, from approved Client B prefixes.</p><span class="tag">Implemented</span></div>
+      <div class="req"><h3>Client A: outbound from the VM</h3><p>Scoped firewall egress rule; the reserved <code>pip-clientA-nat-egress</code> can be attached to the firewall. Client A must allow-list all firewall egress IPs.</p><span class="tag">Implemented</span></div>
+      <div class="req ops"><h3>Single fixed Client A source IP</h3><p>Azure Firewall does not pin a destination to one of its IPs. A fixed address needs a separately approved NAT Gateway design.</p><span class="tag">Operational</span></div>
+      <div class="req"><h3>App connects to Managed HSM</h3><p>Private endpoint, private DNS and managed identity with HSM RBAC. No internet path.</p><span class="tag">Implemented</span></div>
+      <div class="req"><h3>NEU origin fails: use WEU</h3><p>Front Door health probes: NEU priority 1, WEU priority 2. New requests move; in-flight requests do not.</p><span class="tag">Implemented</span></div>
+      <div class="req ops"><h3>NEU VPN or VM fails: VPN clients</h3><p>A gateway and firewall exist in both regions. Moving VPN clients to the WEU VM needs a private DNS name repointed to the WEU load balancer.</p><span class="tag">Operational</span></div>
+      <div class="req ops"><h3>App starts work in WEU if NEU is down</h3><p>The app is installed in both regions. Only one region may process at a time (lease with fencing, idempotent payments).</p><span class="tag">Operational</span></div>
+    </div>
+  </section>
 
   <main>
     <div class="viewer-toolbar">

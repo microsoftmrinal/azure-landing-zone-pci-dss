@@ -19,12 +19,12 @@ sql_admin_login_name = "sg-sql-admins-cde"
 hsm_admin_object_ids = ["00000000-0000-0000-0000-000000000000"]
 
 # --- Phase rollout flags ---
-# Phase 1 minimum: governance + hub(VPN GW) + Standard firewall + spoke + key platform + client VM.
-deploy_vpn_gateway          = true
-deploy_key_platform         = true
-deploy_compute_vm           = true
-deploy_data_platform        = false # flip true later to add SQL + audit storage
-deploy_application_platform = false # flip true later to add App Service + Front Door
+# Phase 1 minimum: governance + hub(VPN GW) + Standard firewall + spoke + key platform + IIS VM.
+deploy_vpn_gateway   = true
+deploy_key_platform  = true
+deploy_compute_vm    = true
+deploy_data_platform = false # flip true later to add SQL + audit storage
+deploy_front_door    = false # flip true later (needs deploy_compute_vm) to add Front Door + WAF
 
 # --- Firewall ---
 firewall_sku_tier = "Standard" # upgrade to "Premium" in place before go-live (enables IDPS/TLS)
@@ -37,10 +37,25 @@ vpn_gateway_sku = "VpnGw2AZ"
 # on_prem_address_spaces = ["192.168.0.0/24"]
 # vpn_shared_key         = "<from Key Vault>"
 
-# custom_domain_name only needed once the application platform is enabled.
-# custom_domain_name = "app.payment24.com"
+# --- IIS application (VM behind internal LB + Private Link Service) ---
+app_port = 8082
+# FQDN on the IIS certificate (must cover both regions); required when deploy_front_door = true.
+# app_origin_hostname = "app.payment24.com"
+# custom_domain_name  = "app.payment24.com"
+# West Europe Private Link Service ID from the environments/dr outputs (adds the priority-2 origin).
+# dr_private_link_service_id = "/subscriptions/<id>/resourceGroups/rg-cde-dr-weu/providers/Microsoft.Network/privateLinkServices/pls-p24-cde-dr-weu"
 
-admin_ssh_public_key = "ssh-rsa AAAA... (retrieve from Key Vault)"
+# --- Client B: inbound over VPN (firewall + NSG allow TCP app_port from these prefixes) ---
+# client_b_inbound_prefixes = ["192.168.10.0/24"]
+
+# --- Client A: connections initiated by the custom app on the VM ---
+# client_a_destination_prefixes = ["203.0.113.20/32"]
+# client_a_destination_ports    = ["443"]
+# Reserved IP added to the firewall. Client A must allow-list ALL firewall egress IPs (see outputs).
+# client_a_egress_public_ip_id  = "/subscriptions/<id>/resourceGroups/<rg>/providers/Microsoft.Network/publicIPAddresses/pip-clientA-nat-egress"
+
+# vm_admin_password is supplied securely at deploy time (scripts/Deploy-LandingZone.ps1 prompts for it
+# and passes it as TF_VAR_vm_admin_password). Do not set it in this file: a value here overrides the prompt.
 
 common_tags = {
   Environment        = "Production"
