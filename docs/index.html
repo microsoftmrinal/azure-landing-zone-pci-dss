@@ -100,12 +100,12 @@ footer a { color: #4f8cff; text-decoration: none; }
 <body>
   <header>
     <h1>☁️ Azure Landing Zone — <span>PCI-DSS v4.0</span></h1>
-    <p class="subtitle">Interactive architecture visualizations for Payment24</p>
+    <p class="subtitle">Interactive architecture visualizations</p>
   </header>
 
   <section class="requirements" aria-labelledby="req-title">
-    <h2 id="req-title">Customer requirements</h2>
-    <p class="note">Green = implemented in the repository. Amber = needs a customer decision or runbook (operational).</p>
+    <h2 id="req-title">Workload requirements</h2>
+    <p class="note">Green = implemented in the repository. Amber = needs a decision by the workload owner or a runbook (operational).</p>
     <div class="req-grid">
       <div class="req"><h3>Windows IIS VMs in North Europe and West Europe</h3><p>Virtual machines only. One Trusted Launch VM per region, no public IP, behind an internal load balancer and Private Link Service.</p><span class="tag">Implemented</span></div>
       <div class="req"><h3>IIS on port 8082 with an SSL FQDN</h3><p>HTTPS on TCP 8082 end to end; Front Door checks the certificate name against the application FQDN.</p><span class="tag">Implemented</span></div>

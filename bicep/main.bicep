@@ -7,7 +7,7 @@ param primaryLocation string = 'northeurope'
 param drLocation string = 'westeurope'
 
 @description('Organisation prefix for naming')
-param orgPrefix string = 'p24'
+param orgPrefix string = 'org'
 
 @description('Environment name')
 param environment string = 'prod'
@@ -52,7 +52,7 @@ param commonTags object = {
   PCIScope: 'CDE'
   DataClassification: 'CardholderData'
   ManagedBy: 'Bicep'
-  Workload: 'Payment24-CDE'
+  Workload: 'CDE-Workload'
 }
 
 // --- Resource Groups ---

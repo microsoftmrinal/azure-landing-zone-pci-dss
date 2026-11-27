@@ -2,14 +2,14 @@
 
 Azure Landing Zone for a **PCI DSS v4.0 Cardholder Data Environment (CDE)** using hub-spoke topology with defence-in-depth controls. The workload runs on **Windows IIS VMs in North Europe and West Europe** (HTTPS on TCP 8082), published through Front Door Premium + WAF over Private Link, with VPN connectivity for partner clients.
 
-> The repository is infrastructure as code. It has been validated statically (Terraform `validate` and tests, Bicep build) and has not been deployed to a customer subscription. Deploying it does not by itself establish PCI DSS compliance; validate scope and controls with your QSA.
+> The repository is infrastructure as code. It has been validated statically (Terraform `validate` and tests, Bicep build) and has not been deployed to an Azure subscription. Deploying it does not by itself establish PCI DSS compliance; validate scope and controls with your QSA.
 
-## Customer Requirements
+## Workload Requirements
 
 > [!IMPORTANT]
-> This landing zone is built around the Payment24 requirements below. Items marked **Operational** need a customer decision or a runbook; they are not automated by this repository.
+> This landing zone is built around the requirements below. Items marked **Operational** need a decision by the workload owner or a runbook; they are not automated by this repository.
 
-| # | Customer requirement | How it is met | Status |
+| # | Requirement | How it is met | Status |
 |---|----------------------|---------------|--------|
 | 1 | **Virtual machines only**, in **North Europe and West Europe** | One Windows Server 2022 IIS VM per region (Trusted Launch, no public IP) behind an internal load balancer and Private Link Service | Implemented (Terraform + Bicep) |
 | 2 | **IIS on port 8082** with an SSL FQDN | HTTPS on TCP 8082 end to end; Front Door validates the certificate name against the application FQDN | Implemented; certificate and IIS binding are **Operational** |
@@ -24,7 +24,7 @@ Azure Landing Zone for a **PCI DSS v4.0 Cardholder Data Environment (CDE)** usin
 
 Questions answered in detail: when the firewall needs another public IP, why Front Door does not go through the firewall, and which failover mechanism applies to which failure are in [docs/architecture.md](docs/architecture.md).
 
-### Ready-to-use script for the customer
+### Ready-to-use deployment script
 
 [`scripts/Deploy-LandingZone.ps1`](scripts/Deploy-LandingZone.ps1) is a PowerShell script that checks prerequisites, validates, plans and applies the deployment, approves the Front Door private endpoint connections, lists the egress IPs Client A must allow-list, and tests the public endpoint.
 
@@ -112,7 +112,7 @@ An optional data platform (Azure SQL with TDE + CMK and immutable audit storage)
 ```mermaid
 graph TD
     TRG[Tenant Root Group]
-    TRG --> Root["P24-Root<br/><i>Security baseline policies</i>"]
+    TRG --> Root["ORG-Root<br/><i>Security baseline policies</i>"]
 
     Root --> Platform[Platform]
     Root --> LZ[Landing Zones]

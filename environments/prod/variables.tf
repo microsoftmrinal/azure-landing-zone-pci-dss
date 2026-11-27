@@ -37,7 +37,7 @@ variable "environment" {
 variable "org_prefix" {
   description = "Organisation prefix for resource naming"
   type        = string
-  default     = "p24"
+  default     = "org"
 }
 
 # --- Networking ---
@@ -137,8 +137,15 @@ variable "common_tags" {
     PCIScope           = "CDE"
     DataClassification = "CardholderData"
     ManagedBy          = "Terraform"
-    Workload           = "Payment24-CDE"
+    Workload           = "CDE-Workload"
   }
+}
+
+# --- Security contact ---
+variable "security_contact_email" {
+  description = "Security contact for Defender for Cloud alert notifications"
+  type        = string
+  default     = "security@example.com"
 }
 
 # --- VPN ---
@@ -169,7 +176,7 @@ variable "hsm_admin_object_ids" {
 
 # --- Front Door ---
 variable "custom_domain_name" {
-  description = "Custom domain for Front Door (e.g., app.payment24.com)"
+  description = "Custom domain for Front Door (e.g., app.example.com)"
   type        = string
   default     = null
 }

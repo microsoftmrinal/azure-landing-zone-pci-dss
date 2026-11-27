@@ -46,7 +46,7 @@ variable "cde_subscription_id" {
 
 variable "org_prefix" {
   type    = string
-  default = "p24"
+  default = "org"
 }
 
 variable "environment" {
@@ -61,7 +61,7 @@ variable "common_tags" {
     PCIScope           = "CDE"
     DataClassification = "CardholderData"
     ManagedBy          = "Terraform"
-    Workload           = "Payment24-CDE"
+    Workload           = "CDE-Workload"
   }
 }
 

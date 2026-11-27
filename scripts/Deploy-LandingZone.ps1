@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Deploys and operates the Payment24 PCI-DSS landing zone (Windows IIS VMs in North Europe and West Europe).
+    Deploys and operates the PCI-DSS landing zone (Windows IIS VMs in North Europe and West Europe).
 
 .DESCRIPTION
     One script for the common tasks, run in this order:

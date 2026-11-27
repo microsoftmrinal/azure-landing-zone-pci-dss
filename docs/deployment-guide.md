@@ -184,12 +184,12 @@ az storage container create \
 |-----------|---------|---------|
 | Resource Group | `rg-<workload>-<env>-<region>` | `rg-cde-prod-neu` |
 | Virtual Network | `vnet-<workload>-<env>-<region>` | `vnet-hub-prod-neu` |
-| Firewall | `fw-<org>-<env>-<region>` | `fw-p24-prod-neu` |
-| Key Vault | `kv-<org>-<env>-<region>` | `kv-p24-prod-neu` |
-| SQL Server | `sql-<org>-<env>-<region>` | `sql-p24-prod-neu` |
-| IIS VM | `vm-<org>-cde-<env>-<region>-<nnn>` | `vm-p24-cde-prod-neu-001` |
-| Internal load balancer | `lbi-<org>-cde-<env>-<region>` | `lbi-p24-cde-prod-neu` |
-| Private Link Service | `pls-<org>-cde-<env>-<region>` | `pls-p24-cde-prod-neu` |
+| Firewall | `fw-<org>-<env>-<region>` | `fw-org-prod-neu` |
+| Key Vault | `kv-<org>-<env>-<region>` | `kv-org-prod-neu` |
+| SQL Server | `sql-<org>-<env>-<region>` | `sql-org-prod-neu` |
+| IIS VM | `vm-<org>-cde-<env>-<region>-<nnn>` | `vm-org-cde-prod-neu-001` |
+| Internal load balancer | `lbi-<org>-cde-<env>-<region>` | `lbi-org-cde-prod-neu` |
+| Private Link Service | `pls-<org>-cde-<env>-<region>` | `pls-org-cde-prod-neu` |
 
 ## Tagging Standard
 
